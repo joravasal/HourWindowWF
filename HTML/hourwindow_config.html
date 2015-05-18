@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>HourWindow</title>
+        <meta charset='utf-8'>
+            <meta name='viewport' content='width=device-width, initial-scale=1'>
+            <link rel='stylesheet' href='jquery/mobile/jquery.mobile-1.4.5.min.css' />
+            <script src='jquery/jquery-1.11.0.min.js'></script>
+            <script src='jquery/mobile/jquery.mobile-1.4.5.min.js'></script>
+            <script src='hourwindow_config.js'></script>
+            <style>
+                .ui-header .ui-title 
+                { 
+                        margin-left: 1em;
+                        margin-right: 1em;
+                        text-overflow: clip;
+                }
+                .color-box
+                {
+                        width: 12vw;
+                        height: 12vw;
+                        border-style: none;
+                        margin: 1.5vw;
+                        display:inline-block;
+                }
+                .selected-color-box
+                {
+                        border-width: 1.5vw;
+                        border-style: solid;
+                        border-color: black;
+                        margin: 0px;
+                }
+                .color-row
+                {
+                        border-style: none;
+                        border-width: 0px;
+                }
+                .hidden
+                {
+                        display: none;
+                }
+        </style>
+    </head>
+    <body>
+        <div data-role="page" id="page1">
+            <div data-role="header" data-theme="b" id="header" data-position="fixed">
+                <h1>HourWindow watchface</h1>
+            </div>
+
+            <div id="settings" data-role="content">
+                
+<!-- Settings for Basalt -->
+                
+                <div id="bg_bluetooth_signal" data-role="fieldcontain" class="hidden">
+                    <fieldset data-role="controlgroup" data-type="horizontal">
+                        <legend>Use background as BT indicator</legend>
+                        <input id="bg_bluetooth_signal_1" name="bg_bluetooth_signal" value="1" type="radio">
+                        <label for="bg_bluetooth_signal_1">ON</label>
+                        <input id="bg_bluetooth_signal_0" name="bg_bluetooth_signal" value="0" type="radio">
+                        <label for="bg_bluetooth_signal_0">OFF</label>
+                    </fieldset>
+                </div>
+                <div id="bg_color" data-role="fieldcontain" class="hidden">
+                    <label for="background-color">Background Color</label>
+                    <a href="#color-picker" data-rel="popup" class="ui-btn ui-corner-all" data-position-to="window" id="bg_color_box" style="height: 5vw; background-color: #00AAFF;"></a>
+                </div>
+            
+                <div id="disk_color" data-role="fieldcontain" class="hidden">
+                    <label for="foreground-color">Disk Color</label>
+                    <a href="#color-picker" data-rel="popup" class="ui-btn ui-corner-all" data-position-to="window" id="disk_color_box" style="height: 5vw; background-color: #FFFFFF"></a>
+                </div>
+                
+                <div id="min_battery_signal" data-role="fieldcontain" class="hidden">
+                    <fieldset data-role="controlgroup" data-type="horizontal">
+                        <legend>Use the minute hand to show battery charge</legend>
+                        <input id="min_battery_signal_1" name="min_battery_signal" value="1" type="radio">
+                        <label for="min_battery_signal_1">ON</label>
+                        <input id="min_battery_signal_0" name="min_battery_signal" value="0" type="radio">
+                        <label for="min_battery_signal_0">OFF</label>
+                    </fieldset>
+                </div>
+                <div id="min_color" data-role="fieldcontain" class="hidden">
+                    <label for="background-color">Minute Hand Color</label>
+                    <a href="#color-picker" data-rel="popup" class="ui-btn ui-corner-all" data-position-to="window" id="min_color_box" style="height: 5vw; background-color: #00AAFF;"></a>
+                </div>
+                
+<!-- Settings for Aplite -->
+
+                <div id="theme_aplite" data-role="fieldcontain" class="hidden">
+                    <label for="theme_aplite_label">Theme</label>
+                    <select name="theme_aplite_select" id="theme_aplite_select">
+                        <option value="0">Black circle on white background</option>
+                        <option value="1">White circle on black background</option>
+                        <option value="2">Black circle on black background divided with white circunference</option>
+                        <option value="3">White circle on white background divided with black circunference</option>
+                        <option value="4">All black background</option>
+                        <option value="5">All white background</option>
+                    </select>
+                </div>
+                
+                <div id="hour_window_color_aplite" data-role="fieldcontain" class="hidden">
+                    <fieldset data-role="controlgroup" data-type="horizontal">
+                        <legend>Minute hand color</legend>
+                        <input id="hour_window_color_aplite_1" name="hour_window_color_aplite" value="1" type="radio">
+                        <label for="hour_window_color_aplite_1">White background with black text</label>
+                        <input id="hour_window_color_aplite_0" name="hour_window_color_aplite" value="0" type="radio">
+                        <label for="hour_window_color_aplite_0">Black background with white text</label>
+                    </fieldset>
+                </div>
+                
+                <div id="minute_hand_color_aplite" data-role="fieldcontain" class="hidden">
+                    <fieldset data-role="controlgroup" data-type="horizontal">
+                        <legend>Minute hand color</legend>
+                        <input id="minute_hand_color_aplite_1" name="minute_hand_color_aplite" value="1" type="radio">
+                        <label for="minute_hand_color_aplite_1">White</label>
+                        <input id="minute_hand_color_aplite_0" name="minute_hand_color_aplite" value="0" type="radio">
+                        <label for="minute_hand_color_aplite_0">Black</label>
+                    </fieldset>
+                </div>
+                
+<!-- General Settings -->
+
+                <div class="ui-grid-a">
+                    <div class="ui-block-a">
+                            <input id="cancel" type="submit" data-theme="a" data-icon="delete" data-iconpos="left" value="Cancel">
+                    </div>
+                    <div class="ui-block-b">
+                            <input id="save" type="submit" data-theme="b" data-icon="check" data-iconpos="right" value="Save">
+                    </div>
+                </div>
+            </div>
+
+            <div data-role="popup" id="color-picker" data-overlay-theme="b">
+                <a href="#" data-rel="back" data-role="button" data-theme="b" data-icon="delete" data-iconpos="notext" class="ui-btn-right">Close</a>
+                <div data-role="main" id="color-picker" class="ui-content" style="border-style: none; height:90vh; overflow-y:scroll; overflow-x:hidden;">
+                    <div class="color-row" id="color-row1">
+                        <div class="color-box" id="color-box-000000" style="background:#000000;"></div>
+                        <div class="color-box" id="color-box-555555" style="background:#555555;"></div>
+                        <div class="color-box" id="color-box-AAAAAA" style="background:#AAAAAA;"></div>
+                        <div class="color-box" id="color-box-FFFFFF" style="background:#FFFFFF;"></div>
+                        <div class="color-box" id="color-box-550000" style="background:#550000;"></div>
+                    </div>
+                    <div class="color-row" id="color-row2">
+                        <div class="color-box" id="color-box-FFAAAA" style="background:#FFAAAA;"></div>
+                        <div class="color-box" id="color-box-FF5555" style="background:#FF5555;"></div>
+                        <div class="color-box" id="color-box-FF0000" style="background:#FF0000;"></div>
+                        <div class="color-box" id="color-box-AA5555" style="background:#AA5555;"></div>
+                        <div class="color-box" id="color-box-AA0000" style="background:#AA0000;"></div>
+                    </div>
+                    <div class="color-row" id="color-row3">
+                        <div class="color-box" id="color-box-FF55AA" style="background:#FF55AA;"></div>
+                        <div class="color-box" id="color-box-FF00AA" style="background:#FF00AA;"></div>
+                        <div class="color-box" id="color-box-FF0055" style="background:#FF0055;"></div>
+                        <div class="color-box" id="color-box-AA0055" style="background:#AA0055;"></div>
+                        <div class="color-box" id="color-box-550055" style="background:#550055;"></div>
+                    </div>
+                    <div class="color-row" id="color-row4">
+                        <div class="color-box" id="color-box-FFAAFF" style="background:#FFAAFF;"></div>
+                        <div class="color-box" id="color-box-FF55FF" style="background:#FF55FF;"></div>
+                        <div class="color-box" id="color-box-FF00FF" style="background:#FF00FF;"></div>
+                        <div class="color-box" id="color-box-AA00AA" style="background:#AA00AA;"></div>
+                        <div class="color-box" id="color-box-AA55AA" style="background:#AA55AA;"></div>
+                    </div>
+                    <div class="color-row" id="color-row5">
+                        <div class="color-box" id="color-box-AAAAFF" style="background:#AAAAFF;"></div>
+                        <div class="color-box" id="color-box-AA55FF" style="background:#AA55FF;"></div>
+                        <div class="color-box" id="color-box-AA00FF" style="background:#AA00FF;"></div>
+                        <div class="color-box" id="color-box-5555AA" style="background:#5555AA;"></div>
+                        <div class="color-box" id="color-box-5500AA" style="background:#5500AA;"></div>
+                    </div>
+                    <div class="color-row" id="color-row6">
+                        <div class="color-box" id="color-box-0000FF" style="background:#0000FF;"></div>
+                        <div class="color-box" id="color-box-0000AA" style="background:#0000AA;"></div>
+                        <div class="color-box" id="color-box-000055" style="background:#000055;"></div>
+                        <div class="color-box" id="color-box-5555FF" style="background:#5555FF;"></div>
+                        <div class="color-box" id="color-box-5500FF" style="background:#5500FF;"></div>
+                    </div>
+                    <div class="color-row" id="color-row7">
+                        <div class="color-box" id="color-box-0055FF" style="background:#0055FF;"></div>
+                        <div class="color-box" id="color-box-0055AA" style="background:#0055AA;"></div>
+                        <div class="color-box" id="color-box-00AAFF" style="background:#00AAFF;"></div>
+                        <div class="color-box" id="color-box-55AAFF" style="background:#55AAFF;"></div>
+                        <div class="color-box" id="color-box-00AAAA" style="background:#00AAAA;"></div>
+                    </div>
+                    <div class="color-row" id="color-row8">
+                        <div class="color-box" id="color-box-AAFFAA" style="background:#AAFFAA;"></div>
+                        <div class="color-box" id="color-box-AAFFFF" style="background:#AAFFFF;"></div>
+                        <div class="color-box" id="color-box-55FFFF" style="background:#55FFFF;"></div>
+                        <div class="color-box" id="color-box-00FFFF" style="background:#00FFFF;"></div>
+                        <div class="color-box" id="color-box-55AAAA" style="background:#55AAAA;"></div>
+                    </div>
+                    <div class="color-row" id="color-row9">
+                        <div class="color-box" id="color-box-00FFAA" style="background:#00FFAA;"></div>
+                        <div class="color-box" id="color-box-55FFAA" style="background:#55FFAA;"></div>
+                        <div class="color-box" id="color-box-00FF55" style="background:#00FF55;"></div>
+                        <div class="color-box" id="color-box-005555" style="background:#005555;"></div>
+                        <div class="color-box" id="color-box-005500" style="background:#005500;"></div>
+                    </div>
+                    <div class="color-row" id="color-row10">
+                        <div class="color-box" id="color-box-55FF00" style="background:#55FF00;"></div>
+                        <div class="color-box" id="color-box-55FF55" style="background:#55FF55;"></div>
+                        <div class="color-box" id="color-box-AAFF55" style="background:#AAFF55;"></div>
+                        <div class="color-box" id="color-box-AAFF00" style="background:#AAFF00;"></div>
+                        <div class="color-box" id="color-box-555500" style="background:#555500;"></div>
+                    </div>
+                    <div class="color-row" id="color-row11">
+                        <div class="color-box" id="color-box-00FF00" style="background:#00FF00;"></div>
+                        <div class="color-box" id="color-box-55AA55" style="background:#55AA55;"></div>
+                        <div class="color-box" id="color-box-00AA55" style="background:#00AA55;"></div>
+                        <div class="color-box" id="color-box-00AA00" style="background:#00AA00;"></div>
+                        <div class="color-box" id="color-box-55AA00" style="background:#55AA00;"></div>
+                    </div>
+                    <div class="color-row" id="color-row12">
+                        <div class="color-box" id="color-box-FFFFAA" style="background:#FFFFAA;"></div>
+                        <div class="color-box" id="color-box-FFFF55" style="background:#FFFF55;"></div>
+                        <div class="color-box" id="color-box-FFFF00" style="background:#FFFF00;"></div>
+                        <div class="color-box" id="color-box-AAAA55" style="background:#AAAA55;"></div>
+                        <div class="color-box" id="color-box-AAAA00" style="background:#AAAA00;"></div>
+                    </div>
+                    <div class="color-row" id="color-row13">
+                        <div class="color-box" id="color-box-FFAA55" style="background:#FFAA55;"></div>
+                        <div class="color-box" id="color-box-FFAA00" style="background:#FFAA00;"></div>
+                        <div class="color-box" id="color-box-FF5500" style="background:#FF5500;"></div>
+                        <div class="color-box" id="color-box-AA5500" style="background:#AA5500;"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </body>
+</html>
