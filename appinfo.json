@@ -1,0 +1,30 @@
+{
+    "appKeys": {
+        "KEY_BATTERY_SIGNAL": 5,
+        "KEY_BT_SIGNAL": 4,
+        "KEY_COLORS_BASALT": 3,
+        "KEY_HOUR_COLOR_APLITE": 2,
+        "KEY_MIN_COLOR_APLITE": 1,
+        "KEY_THEME_APLITE": 0
+    },
+    "capabilities": [
+        "configurable"
+    ],
+    "companyName": "joravasal@gmail.com",
+    "longName": "HourWindow2",
+    "projectType": "native",
+    "resources": {
+        "media": []
+    },
+    "sdkVersion": "3",
+    "shortName": "HourWindow2",
+    "targetPlatforms": [
+        "aplite",
+        "basalt"
+    ],
+    "uuid": "17041e6a-322c-46ad-8389-f087972dc710",
+    "versionLabel": "1.0",
+    "watchapp": {
+        "watchface": true
+    }
+}
