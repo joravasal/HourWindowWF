@@ -78,10 +78,9 @@ Pebble.addEventListener("webviewclosed",
       setItem("min_color_aplite", aplite_min_color);
     }
     
-    if(configuration.KEY_COLORS_BASALT && configuration.KEY_COLORS_BASALT.length == 18 && configuration.basalt_colors.localeCompare(basalt_colors) !== 0) {
+    if(configuration.KEY_COLORS_BASALT && configuration.KEY_COLORS_BASALT.length == 18 && configuration.KEY_COLORS_BASALT.localeCompare(basalt_colors) !== 0) {
       basalt_colors = configuration.KEY_COLORS_BASALT;
       setItem("basalt_colors", basalt_colors);
-      config.basalt_colors = basalt_colors;
     }
     if(!isNaN(configuration.KEY_BT_SIGNAL) && configuration.KEY_BT_SIGNAL != basalt_bgBTSignal) {
       basalt_bgBTSignal = configuration.KEY_BT_SIGNAL;

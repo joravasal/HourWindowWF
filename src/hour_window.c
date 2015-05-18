@@ -185,7 +185,7 @@ static void update_minute_hand_proc(Layer *layer, GContext *ctx) {
     bgColor = GColorFromHEX(bgColorInt);
     textColor = GColorFromHEX(diskColorInt);
     windowFill = GColorFromHEX(bgColorInt);
-    windowStroke = GColorLightGray;
+    windowStroke = GColorFromHEX(bgColorInt);
     
     window_set_background_color(window, bgColor);
   }
@@ -229,11 +229,11 @@ static void update_minute_hand_proc(Layer *layer, GContext *ctx) {
       bgColor = GColorWhite;
     } else if(theme == SAME_COLORS_BLACK) {
       bgCircleFill = GColorBlack;
-      bgCircleStroke = GColorClear;
+      bgCircleStroke = GColorBlack;
       bgColor = GColorBlack;
     } else if(theme == SAME_COLORS_WHITE) {
       bgCircleFill = GColorWhite;
-      bgCircleStroke = GColorClear;
+      bgCircleStroke = GColorWhite;
       bgColor = GColorWhite;
     }
   

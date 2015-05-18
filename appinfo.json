@@ -11,13 +11,13 @@
         "configurable"
     ],
     "companyName": "joravasal@gmail.com",
-    "longName": "HourWindow2",
+    "longName": "HourWindow",
     "projectType": "native",
     "resources": {
         "media": []
     },
     "sdkVersion": "3",
-    "shortName": "HourWindow2",
+    "shortName": "HourWindow",
     "targetPlatforms": [
         "aplite",
         "basalt"
