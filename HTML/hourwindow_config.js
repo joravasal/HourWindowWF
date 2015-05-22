@@ -1,4 +1,5 @@
 var watch_version = -1;
+var COLOR_STRING_LENGTH = 42;
 
 //Function to convert hex format to a rgb color
 function rgb2hex(rgb){
@@ -35,15 +36,43 @@ $(function () {
 });
 
 $(function () {
-  $('#disk_color_box').on('click', function (event) {
+  $('#text_color_box').on('click', function (event) {
 	changeColorObject = 1;
 	highlightColorBox($(this));
   });
 });
 
 $(function () {
-  $('#min_color_box').on('click', function (event) {
+  $('#disk_fill_color_box').on('click', function (event) {
 	changeColorObject = 2;
+	highlightColorBox($(this));
+  });
+});
+
+$(function () {
+  $('#disk_stroke_color_box').on('click', function (event) {
+	changeColorObject = 3;
+	highlightColorBox($(this));
+  });
+});
+
+$(function () {
+  $('#hour_window_color_box').on('click', function (event) {
+	changeColorObject = 4;
+	highlightColorBox($(this));
+  });
+});
+
+$(function () {
+  $('#min_fill_color_box').on('click', function (event) {
+	changeColorObject = 5;
+	highlightColorBox($(this));
+  });
+});
+
+$(function () {
+  $('#min_stroke_color_box').on('click', function (event) {
+	changeColorObject = 6;
 	highlightColorBox($(this));
   });
 });
@@ -65,10 +94,18 @@ $(function () {
 
 	if (changeColorObject == 0)
 		$('#bg_color_box').css('background-color', selected_color);
-	else if(changeColorObject == 1)
-		$('#disk_color_box').css('background-color', selected_color);
+        else if(changeColorObject == 1)
+		$('#text_color_box').css('background-color', selected_color);
+	else if(changeColorObject == 2)
+		$('#disk_fill_color_box').css('background-color', selected_color);
+        else if(changeColorObject == 3)
+		$('#disk_stroke_color_box').css('background-color', selected_color);
+        else if(changeColorObject == 4)
+		$('#hour_window_color_box').css('background-color', selected_color);
+        else if(changeColorObject == 5)
+		$('#min_fill_color_box').css('background-color', selected_color);
         else
-                $('#min_color_box').css('background-color', selected_color);
+                $('#min_stroke_color_box').css('background-color', selected_color);
 	$( "#color-picker" ).popup( "close" );   
   });
 });
@@ -129,9 +166,17 @@ function saveOptions() {
             options.KEY_BATTERY_SIGNAL = parseInt($("input[name=min_battery_signal]:checked").val(), 10);
             
             var colors = rgb2hex($('#bg_color_box').css("background-color")).replace("#", '');
-            colors = colors + rgb2hex($('#disk_color_box').css("background-color")).replace("#", '');
-            colors = colors + rgb2hex($('#min_color_box').css("background-color")).replace("#", '');
+            colors = colors + rgb2hex($('#text_color_box').css("background-color")).replace("#", '');
+            
+            colors = colors + rgb2hex($('#disk_fill_color_box').css("background-color")).replace("#", '');
+            colors = colors + rgb2hex($('#disk_stroke_color_box').css("background-color")).replace("#", '');
+            colors = colors + rgb2hex($('#hour_window_color_box').css("background-color")).replace("#", '');
+            
+            colors = colors + rgb2hex($('#min_fill_color_box').css("background-color")).replace("#", '');
+            colors = colors + rgb2hex($('#min_stroke_color_box').css("background-color")).replace("#", '');
+            
             options.KEY_COLORS_BASALT = colors;
+
         }
 	return options;
 }
@@ -142,23 +187,29 @@ $("document").ready(function() {
 	if (watch_version >= 3) {
             var bgBTSignal = getQueryParam("bgBT", 0);
             bgBTSignal = parseInt(isNumber(bgBTSignal) && bgBTSignal <= 1 ? bgBTSignal : 0);
-            $('#bg_bluetooth_signal').removeClass("hidden");
+            //$('#bg_bluetooth_signal').removeClass("hidden");
             $('#bg_bluetooth_signal_'+bgBTSignal).prop( "checked", true ).checkboxradio("refresh");
             
             var minBatterySignal = getQueryParam("bgBT", 0);
             minBatterySignal = parseInt(isNumber(minBatterySignal) && minBatterySignal <= 1 ? minBatterySignal : 0);
-            $('#min_battery_signal').removeClass("hidden");
+            //$('#min_battery_signal').removeClass("hidden");
             $('#min_battery_signal_'+minBatterySignal).prop( "checked", true ).checkboxradio("refresh");
             
             var basalt_colors = getQueryParam("basalt_colors", 0);
-            basalt_colors = basalt_colors.length == 18 ? basalt_colors : "FFFFFF555555AA0000";
+            basalt_colors = basalt_colors.length == COLOR_STRING_LENGTH ? basalt_colors : "FFFFFF000000555555AAAAAAFFFFFFAA0000FF0000";
             $('#bg_color_box').css('background-color', "#"+basalt_colors.substring(0,6));
-            $('#disk_color_box').css('background-color', "#"+basalt_colors.substring(6,12));
-            $('#min_color_box').css('background-color', "#"+basalt_colors.substring(12,18));
+            $('#text_color_box').css('background-color', "#"+basalt_colors.substring(6,12));
+            $('#disk_fill_color_box').css('background-color', "#"+basalt_colors.substring(12,18));
+            $('#disk_stroke_color_box').css('background-color', "#"+basalt_colors.substring(18,24));
+            $('#hour_window_color_box').css('background-color', "#"+basalt_colors.substring(24,30));
+            $('#min_fill_color_box').css('background-color', "#"+basalt_colors.substring(30,36));
+            $('#min_stroke_color_box').css('background-color', "#"+basalt_colors.substring(36,42));
             
             if(bgBTSignal == 0)
                 $('#bg_color').removeClass("hidden");
+            $('#text_color').removeClass("hidden");
             $('#disk_color').removeClass("hidden");
+            $('#hour_window_color').removeClass("hidden");
             if(minBatterySignal == 0)
                 $('#min_color').removeClass("hidden");
             
