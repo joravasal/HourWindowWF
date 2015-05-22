@@ -28,7 +28,7 @@ function loadLocalVariables() {
   aplite_hour_color = !aplite_hour_color ? 1 : aplite_hour_color;
   aplite_min_color = !aplite_min_color ? 1 : aplite_min_color;
   
-	basalt_colors = !basalt_colors ? "FFFFFF555555AA0000" : basalt_colors;
+	basalt_colors = !basalt_colors ? "FFFFFF000000555555AAAAAAFFFFFFAA0000FF0000" : basalt_colors;
   basalt_bgBTSignal = !basalt_bgBTSignal ? 1 : basalt_bgBTSignal;
   basalt_minBatterySignal = !basalt_minBatterySignal ? 1 : basalt_minBatterySignal;
 }
@@ -43,7 +43,7 @@ Pebble.addEventListener("ready",
 Pebble.addEventListener("showConfiguration",
   function(e) {
     //Load the remote config page
-    var url = 'https://dl.dropboxusercontent.com/u/3223915/Pebble_config_pages/hourwindow_config.html'+
+    var url = 'https://dl.dropboxusercontent.com/u/3223915/Pebble_config_pages/hourwindow_config_test.html'+
 		'?watch_version='+getWatchVersion();
     if (getWatchVersion() < 3) {
       url = url + '&theme_aplite=' + aplite_theme +
@@ -78,7 +78,7 @@ Pebble.addEventListener("webviewclosed",
       setItem("min_color_aplite", aplite_min_color);
     }
     
-    if(configuration.KEY_COLORS_BASALT && configuration.KEY_COLORS_BASALT.length == 18 && configuration.KEY_COLORS_BASALT.localeCompare(basalt_colors) !== 0) {
+    if(configuration.KEY_COLORS_BASALT && configuration.KEY_COLORS_BASALT.length == 42 && configuration.KEY_COLORS_BASALT.localeCompare(basalt_colors) !== 0) {
       basalt_colors = configuration.KEY_COLORS_BASALT;
       setItem("basalt_colors", basalt_colors);
     }

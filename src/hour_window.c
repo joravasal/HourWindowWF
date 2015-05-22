@@ -5,9 +5,10 @@
 
 Window *window;
 static Layer *minute_hand_layer;
+static Layer *blocker_layer;
 static Layer *background_layer;
 TextLayer *hour_text_layer;
-//TextLayer *last_hour_text_layer;
+TextLayer *last_hour_text_layer;
 
 #ifdef PBL_COLOR
   char basalt_colors[EDITABLE_COLORS_LENGTH];
@@ -31,6 +32,7 @@ int timer_angle = 360;
 
 static GPath *minute_arrow;
 static GPath *window_path;
+static GPath *blocker_path;
 static GPoint center;
 
 static void minute_tick_handler(struct tm *tick_time, TimeUnits units_changed) {
@@ -39,6 +41,7 @@ static void minute_tick_handler(struct tm *tick_time, TimeUnits units_changed) {
 
 void timer_callback(void *data) {
   layer_mark_dirty(background_layer);
+  layer_mark_dirty(blocker_layer);
 }
 
 static void update_window_proc(Layer *layer, GContext *ctx) {
@@ -51,34 +54,31 @@ static void update_window_proc(Layer *layer, GContext *ctx) {
   static char buffer_prev[] = "00";
   
   int hour = t->tm_hour;
-  //int prevHour = hour - 1;
+  int prevHour = hour - 1;
   //Update hour text
   if(clock_is_24h_style() == true) {
     strftime(buffer, sizeof(buffer), "%H", t);
     text_layer_set_text(hour_text_layer, buffer);
-    //if (prevHour < 0) prevHour = 23;
+    if (prevHour < 0) prevHour = 23;
   } else {
     strftime(buffer, sizeof(buffer), "%I", t);
     text_layer_set_text(hour_text_layer, buffer);
-    //if (prevHour < 0) prevHour = 11;
+    if (prevHour < 0) prevHour = 11;
   }
   
-  //text_layer_set_text_color(last_hour_text_layer, textColor);
-  text_layer_set_text_color(hour_text_layer, textColor);
-  
-  //snprintf(buffer_prev, sizeof(buffer_prev), "%d", prevHour);
-  //text_layer_set_text(last_hour_text_layer, buffer_prev);
+  snprintf(buffer_prev, sizeof(buffer_prev), "%d", prevHour);
+  text_layer_set_text(last_hour_text_layer, buffer_prev);
   
   GPoint auxPoint = ANALOG_BG_HOUR_POINTS[hour % 12];
   layer_set_frame(text_layer_get_layer(hour_text_layer), GRect(auxPoint.x - (TEXT_WIDTH / 2), auxPoint.y - (TEXT_HEIGHT / 2) + TEXT_Y_OFFSET, TEXT_WIDTH, TEXT_HEIGHT));
-  //auxPoint = ANALOG_BG_HOUR_POINTS[prevHour % 12];
-  //layer_set_frame(text_layer_get_layer(last_hour_text_layer), GRect(auxPoint.x - (TEXT_WIDTH / 2), auxPoint.y - (TEXT_HEIGHT / 2) + TEXT_Y_OFFSET, TEXT_WIDTH, TEXT_HEIGHT));  
+  auxPoint = ANALOG_BG_HOUR_POINTS[prevHour % 12];
+  layer_set_frame(text_layer_get_layer(last_hour_text_layer), GRect(auxPoint.x - (TEXT_WIDTH / 2), auxPoint.y - (TEXT_HEIGHT / 2) + TEXT_Y_OFFSET, TEXT_WIDTH, TEXT_HEIGHT));  
   
   //Upate background
   graphics_context_set_fill_color(ctx, bgCircleFill);
   graphics_context_set_stroke_color(ctx, bgCircleStroke);
   #ifdef PBL_COLOR
-    graphics_context_set_stroke_width(ctx, 4);
+    graphics_context_set_stroke_width(ctx, 2);
   #endif
   graphics_fill_circle(ctx, center, CIRCLE_RADIUS);
   graphics_draw_circle(ctx, center, CIRCLE_RADIUS);
@@ -88,8 +88,8 @@ static void update_window_proc(Layer *layer, GContext *ctx) {
   
   current_angle = 30 * ((hour) % 12);
   
-  if(current_angle > timer_angle) {
-    timer_angle = (timer_angle + 2) % 360;
+  if(current_angle > timer_angle || (current_angle == 0 && timer_angle < 360 && timer_angle != 0)) {
+    timer_angle = (timer_angle + 1) % 360;    
     gpath_rotate_to(window_path, (timer_angle * TRIG_MAX_ANGLE) / 360);
     graphics_context_set_fill_color(ctx, windowFill);
     graphics_context_set_stroke_color(ctx, windowStroke);
@@ -98,14 +98,23 @@ static void update_window_proc(Layer *layer, GContext *ctx) {
     //Register next execution
     timer = app_timer_register(timer_delay, (AppTimerCallback) timer_callback, NULL);
   } else {
-    timer_angle = current_angle;
+    timer_angle = current_angle;    
     gpath_rotate_to(window_path, (current_angle * TRIG_MAX_ANGLE) / 360);
     graphics_context_set_fill_color(ctx, windowFill);
     graphics_context_set_stroke_color(ctx, windowStroke);
     gpath_draw_filled(ctx, window_path);
     gpath_draw_outline(ctx, window_path);
   }
-  
+}
+
+static void update_blockers_proc(Layer *layer, GContext *ctx) {
+    gpath_rotate_to(blocker_path, (((timer_angle + 30) % 360) * TRIG_MAX_ANGLE) / 360);
+    graphics_context_set_fill_color(ctx, bgCircleFill);
+    gpath_draw_filled(ctx, blocker_path);
+    
+    gpath_rotate_to(blocker_path, (((timer_angle - 30) % 360) * TRIG_MAX_ANGLE) / 360);
+    graphics_context_set_fill_color(ctx, bgCircleFill);
+    gpath_draw_filled(ctx, blocker_path);
 }
 
 static void update_minute_hand_proc(Layer *layer, GContext *ctx) {
@@ -158,36 +167,49 @@ static void update_minute_hand_proc(Layer *layer, GContext *ctx) {
     char str_color1[7];
 		char str_color2[7];
     char str_color3[7];
+    char str_color4[7];
+    char str_color5[7];
+    char str_color6[7];
+    char str_color7[7];
 
 		if (strlen(basalt_colors) >= EDITABLE_COLORS_LENGTH - 1) {
 			memcpy(str_color1, &basalt_colors[0], 6);
 			memcpy(str_color2, &basalt_colors[6], 6);
       memcpy(str_color3, &basalt_colors[12], 6);
+      memcpy(str_color4, &basalt_colors[18], 6);
+      memcpy(str_color5, &basalt_colors[24], 6);
+      memcpy(str_color6, &basalt_colors[30], 6);
+      memcpy(str_color7, &basalt_colors[36], 6);
 			str_color1[6] = '\0';
 			str_color2[6] = '\0';
       str_color3[6] = '\0';
+      str_color4[6] = '\0';
+      str_color5[6] = '\0';
+      str_color6[6] = '\0';
+      str_color7[6] = '\0';
 		}
 		else return;
 
 		int bgColorInt = HexStringToUInt(str_color1);
-		int diskColorInt = HexStringToUInt(str_color2);
-    int minColorInt = HexStringToUInt(str_color3);
-  
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "background color \"%d\"", bgColorInt);
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "disk color \"%d\"", diskColorInt);
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "min color \"%d\"", minColorInt);
+    int textColorInt = HexStringToUInt(str_color2);
+		int diskFillColorInt = HexStringToUInt(str_color3);
+    int diskStrokeColorInt = HexStringToUInt(str_color4);
+    int hourWindowStrokeColorInt = HexStringToUInt(str_color5);
+    int minFillColorInt = HexStringToUInt(str_color6);
+    int minStrokeColorInt = HexStringToUInt(str_color7);
     
-    minuteHandFill = GColorFromHEX(minColorInt);
-    minuteHandStroke = GColorFromHEX(minColorInt);
-    middleDotColor = GColorFromHEX(diskColorInt);
-    bgCircleFill = GColorFromHEX(diskColorInt);
-    bgCircleStroke = GColorFromHEX(diskColorInt);
+    minuteHandFill = GColorFromHEX(minFillColorInt);
+    minuteHandStroke = GColorFromHEX(minStrokeColorInt);
+    
+    middleDotColor = GColorFromHEX(diskFillColorInt);
+    bgCircleFill = GColorFromHEX(diskFillColorInt);
+    bgCircleStroke = GColorFromHEX(diskStrokeColorInt);
+    
     bgColor = GColorFromHEX(bgColorInt);
-    textColor = GColorFromHEX(diskColorInt);
-    windowFill = GColorFromHEX(bgColorInt);
-    windowStroke = GColorFromHEX(bgColorInt);
+    textColor = GColorFromHEX(textColorInt);
     
-    window_set_background_color(window, bgColor);
+    windowFill = GColorFromHEX(bgColorInt);
+    windowStroke = GColorFromHEX(hourWindowStrokeColorInt);
   }
 #else
   static void apply_colors(int theme, int min_color, int hour_color) {
@@ -236,8 +258,6 @@ static void update_minute_hand_proc(Layer *layer, GContext *ctx) {
       bgCircleStroke = GColorWhite;
       bgColor = GColorWhite;
     }
-  
-    window_set_background_color(window, bgColor);
   }
 #endif
 
@@ -309,8 +329,13 @@ static void in_recv_handler(DictionaryIterator *iterator, void *context) {
   #else
     apply_colors(new_theme, new_min_hand_color, new_hour_color);
   #endif
+  
+  text_layer_set_text_color(last_hour_text_layer, textColor);
+  text_layer_set_text_color(hour_text_layer, textColor);
+  window_set_background_color(window, bgColor);
   layer_mark_dirty(minute_hand_layer);
   layer_mark_dirty(background_layer);
+  layer_mark_dirty(blocker_layer);
 }
 
 static void window_load(Window *window) {
@@ -318,7 +343,7 @@ static void window_load(Window *window) {
 		if (persist_exists(KEY_COLORS_BASALT))
 			persist_read_string(KEY_COLORS_BASALT, basalt_colors, EDITABLE_COLORS_LENGTH);
 		else
-			memcpy(basalt_colors, "FFFFFF555555AA0000"+'\0', EDITABLE_COLORS_LENGTH);
+			memcpy(basalt_colors, "FFFFFF000000555555AAAAAAFFFFFFAA0000FF0000"+'\0', EDITABLE_COLORS_LENGTH);
     apply_colors();
 	#else
 		int aplite_theme = persist_exists(KEY_THEME_APLITE) ? persist_read_int(KEY_THEME_APLITE) : ORIGINAL_COLORS;
@@ -333,9 +358,10 @@ static void window_load(Window *window) {
   center = grect_center_point(&bounds);
   
   gpath_move_to(window_path, center);
+  gpath_move_to(blocker_path, center);
   gpath_move_to(minute_arrow, center);
 
-  background_layer = layer_create(GRect(0, 0, 144, 168));
+  background_layer = layer_create(bounds);
   layer_set_update_proc(background_layer, update_window_proc);
   layer_add_child(window_layer, background_layer);
   
@@ -345,15 +371,18 @@ static void window_load(Window *window) {
   text_layer_set_text_alignment(hour_text_layer, GTextAlignmentCenter);
   text_layer_set_font(hour_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18));
   
-  //Needed if at some point the movement of the window is animated and both hours are shown at the same time
-  /*last_hour_text_layer = text_layer_create(GRect(0, 0, TEXT_WIDTH, TEXT_HEIGHT));
+  last_hour_text_layer = text_layer_create(GRect(0, 0, TEXT_WIDTH, TEXT_HEIGHT));
   text_layer_set_background_color(last_hour_text_layer, GColorClear);
   text_layer_set_text_color(last_hour_text_layer, textColor);
   text_layer_set_text_alignment(last_hour_text_layer, GTextAlignmentCenter);
   text_layer_set_font(last_hour_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18));
-  */
+  
   layer_add_child(window_layer, text_layer_get_layer(hour_text_layer));
-  //layer_add_child(window_layer, text_layer_get_layer(last_hour_text_layer));
+  layer_add_child(window_layer, text_layer_get_layer(last_hour_text_layer));
+  
+  blocker_layer = layer_create(bounds);
+  layer_set_update_proc(blocker_layer, update_blockers_proc);
+  layer_add_child(window_layer, blocker_layer);
   
   minute_hand_layer = layer_create(bounds);
   layer_set_update_proc(minute_hand_layer, update_minute_hand_proc);
@@ -365,7 +394,7 @@ static void window_unload(Window *window) {
   layer_destroy(background_layer);
   
   text_layer_destroy(hour_text_layer);
-  //text_layer_destroy(last_hour_text_layer);
+  text_layer_destroy(last_hour_text_layer);
 }
 
 void handle_init(void) {
@@ -382,12 +411,22 @@ void handle_init(void) {
   
   minute_arrow = gpath_create(&MINUTE_HAND_POINTS);
   
+  //Create the opening for the hour
   GPathBuilder *builder = gpath_builder_create(MAX_POINTS);
   gpath_builder_move_to_point(builder, WINDOW_POINTS[0]);
   gpath_builder_line_to_point(builder, WINDOW_POINTS[1]);
   gpath_builder_curve_to_point(builder, WINDOW_POINTS[4], WINDOW_POINTS[2], WINDOW_POINTS[3]);
   gpath_builder_line_to_point(builder, WINDOW_POINTS[0]);
   window_path = gpath_builder_create_path(builder);
+  gpath_builder_destroy(builder);
+  
+  //Create the blocker for the extra text in the animations
+  builder = gpath_builder_create(MAX_POINTS);
+  gpath_builder_move_to_point(builder, HOUR_BLOCKER[0]);
+  gpath_builder_line_to_point(builder, HOUR_BLOCKER[1]);
+  gpath_builder_curve_to_point(builder, HOUR_BLOCKER[4], HOUR_BLOCKER[2], HOUR_BLOCKER[3]);
+  gpath_builder_line_to_point(builder, HOUR_BLOCKER[0]);
+  blocker_path = gpath_builder_create_path(builder);
   gpath_builder_destroy(builder);
   
   // Show the Window on the watch, with animated=true
@@ -401,6 +440,7 @@ void handle_deinit(void) {
   window_destroy(window);
   gpath_destroy(minute_arrow);
   gpath_destroy(window_path);
+  gpath_destroy(blocker_path);
 }
 
 int main(void) {
