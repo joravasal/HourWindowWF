@@ -64,10 +64,22 @@
                     <label for="background-color">Background Color</label>
                     <a href="#color-picker" data-rel="popup" class="ui-btn ui-corner-all" data-position-to="window" id="bg_color_box" style="height: 5vw; background-color: #00AAFF;"></a>
                 </div>
+                
+                <div id="text_color" data-role="fieldcontain" class="hidden">
+                    <label for="background-color">Text Color</label>
+                    <a href="#color-picker" data-rel="popup" class="ui-btn ui-corner-all" data-position-to="window" id="text_color_box" style="height: 5vw; background-color: #000000;"></a>
+                </div>
             
                 <div id="disk_color" data-role="fieldcontain" class="hidden">
-                    <label for="foreground-color">Disk Color</label>
-                    <a href="#color-picker" data-rel="popup" class="ui-btn ui-corner-all" data-position-to="window" id="disk_color_box" style="height: 5vw; background-color: #FFFFFF"></a>
+                    <label for="background-color">Disk Color (Filling)</label>
+                    <a href="#color-picker" data-rel="popup" class="ui-btn ui-corner-all" data-position-to="window" id="disk_fill_color_box" style="height: 5vw; background-color: #FFFFFF"></a>
+                    <label for="background-color">Disk Color (Stroke)</label>
+                    <a href="#color-picker" data-rel="popup" class="ui-btn ui-corner-all" data-position-to="window" id="disk_stroke_color_box" style="height: 5vw; background-color: #FFFFFF"></a>
+                </div>
+                
+                <div id="hour_window_color" data-role="fieldcontain" class="hidden">
+                    <label for="background-color">Hour window stroke color</label>
+                    <a href="#color-picker" data-rel="popup" class="ui-btn ui-corner-all" data-position-to="window" id="hour_window_color_box" style="height: 5vw; background-color: #FFFFFF;"></a>
                 </div>
                 
                 <div id="min_battery_signal" data-role="fieldcontain" class="hidden">
@@ -80,8 +92,10 @@
                     </fieldset>
                 </div>
                 <div id="min_color" data-role="fieldcontain" class="hidden">
-                    <label for="background-color">Minute Hand Color</label>
-                    <a href="#color-picker" data-rel="popup" class="ui-btn ui-corner-all" data-position-to="window" id="min_color_box" style="height: 5vw; background-color: #00AAFF;"></a>
+                    <label for="background-color">Minute Hand Color (Filling)</label>
+                    <a href="#color-picker" data-rel="popup" class="ui-btn ui-corner-all" data-position-to="window" id="min_fill_color_box" style="height: 5vw; background-color: #00AAFF;"></a>
+                    <label for="background-color">Minute Hand Color (Stroke)</label>
+                    <a href="#color-picker" data-rel="popup" class="ui-btn ui-corner-all" data-position-to="window" id="min_stroke_color_box" style="height: 5vw; background-color: #00AAFF;"></a>
                 </div>
                 
 <!-- Settings for Aplite -->
@@ -91,8 +105,8 @@
                     <select name="theme_aplite_select" id="theme_aplite_select">
                         <option value="0">Black circle on white background</option>
                         <option value="1">White circle on black background</option>
-                        <option value="2">Black circle on black background divided with white circunference</option>
-                        <option value="3">White circle on white background divided with black circunference</option>
+                        <option value="2">Black circle on black background divided with white circumference</option>
+                        <option value="3">White circle on white background divided with black circumference</option>
                         <option value="4">All black background</option>
                         <option value="5">All white background</option>
                     </select>
