@@ -10,7 +10,15 @@
 #define KEY_BATTERY_SIGNAL 5
   
 // Each color has a length of 6 plus the ending char
-#define EDITABLE_COLORS_LENGTH 43
+#define EDITABLE_COLORS_LENGTH 55
+  
+// Bluetooth modes
+#define BT_OFF  0 //no status visible
+#define BT_CHANGE_BG 1 //BG color changes depending on the BT status
+#define BT_CHANGE_DISC 2 //BG color changes depending on the BT status
+#define BT_CHANGE_MIN_HANDLE 3 //BG color changes depending on the BT status
+#define BT_ICON 4 //An icon shows the BT status
+#define BT_ICON_ONLY_DISC 5 //An icon shows the BT status only if it is disconnected
 
 // Styles for aplite watches
 static const int ORIGINAL_COLORS = 0;

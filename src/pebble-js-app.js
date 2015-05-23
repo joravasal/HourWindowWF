@@ -3,7 +3,7 @@ var aplite_hour_color = 1;
 var aplite_min_color = 1;
 
 var basalt_colors = -1;
-var basalt_bgBTSignal = 0;
+var bt_signal = 0;
 var basalt_minBatterySignal = 0;
 
 function getItem(reference) {
@@ -16,20 +16,21 @@ function setItem(reference, item) {
 }
 
 function loadLocalVariables() {
+  bt_signal = parseInt(getItem("bt_signal"));
+  bt_signal = !bt_signal ? 1 : bt_signal;
+  
 	aplite_theme = parseInt(getItem("theme_aplite"));
   aplite_hour_color = parseInt(getItem("hour_color_aplite"));
   aplite_min_color = parseInt(getItem("min_color_aplite"));
-  
-	basalt_colors = getItem("basalt_colors");
-  basalt_bgBTSignal = parseInt(getItem("basalt_bgBTsignal"));
-  basalt_minBatterySignal = parseInt(getItem("basalt_minBatterySignal"));
 	
 	aplite_theme = !aplite_theme ? 0 : aplite_theme;
   aplite_hour_color = !aplite_hour_color ? 1 : aplite_hour_color;
   aplite_min_color = !aplite_min_color ? 1 : aplite_min_color;
   
-	basalt_colors = !basalt_colors ? "FFFFFF000000555555AAAAAAFFFFFFAA0000FF0000" : basalt_colors;
-  basalt_bgBTSignal = !basalt_bgBTSignal ? 1 : basalt_bgBTSignal;
+	basalt_colors = getItem("basalt_colors");
+  basalt_minBatterySignal = parseInt(getItem("basalt_minBatterySignal"));
+  
+	basalt_colors = !basalt_colors ? "FFFFFF000000555555AAAAAAFFFFFFFF0000FF000055FF55FF5555" : basalt_colors;
   basalt_minBatterySignal = !basalt_minBatterySignal ? 1 : basalt_minBatterySignal;
 }
 
@@ -44,14 +45,13 @@ Pebble.addEventListener("showConfiguration",
   function(e) {
     //Load the remote config page
     var url = 'https://dl.dropboxusercontent.com/u/3223915/Pebble_config_pages/hourwindow_config_test.html'+
-		'?watch_version='+getWatchVersion();
+		'?watch_version=' + getWatchVersion() + '&btSignal=' + bt_signal;
     if (getWatchVersion() < 3) {
       url = url + '&theme_aplite=' + aplite_theme +
           '&hour_color_aplite=' + aplite_hour_color +
           '&min_color_aplite=' + aplite_min_color;
     } else {
       url = url +	'&basalt_colors=' + basalt_colors +
-          '&basalt_bgBTSignal=' + basalt_bgBTSignal +
           '&basalt_minBatterySignal=' + basalt_minBatterySignal;
     }
 		
@@ -64,6 +64,11 @@ Pebble.addEventListener("webviewclosed",
     //Get JSON dictionary
     var configuration = JSON.parse(decodeURIComponent(e.response));
     console.log("Configuration window returned: " + JSON.stringify(configuration));
+    
+    if(!isNaN(configuration.KEY_BT_SIGNAL) && configuration.KEY_BT_SIGNAL != bt_signal) {
+      bt_signal = configuration.KEY_BT_SIGNAL;
+      setItem("bt_signal", bt_signal);
+    }
  
     if(!isNaN(configuration.KEY_THEME_APLITE) && configuration.KEY_THEME_APLITE != aplite_theme) {
       aplite_theme = configuration.KEY_THEME_APLITE;
@@ -78,13 +83,9 @@ Pebble.addEventListener("webviewclosed",
       setItem("min_color_aplite", aplite_min_color);
     }
     
-    if(configuration.KEY_COLORS_BASALT && configuration.KEY_COLORS_BASALT.length == 42 && configuration.KEY_COLORS_BASALT.localeCompare(basalt_colors) !== 0) {
+    if(configuration.KEY_COLORS_BASALT && configuration.KEY_COLORS_BASALT.length == 54 && configuration.KEY_COLORS_BASALT.localeCompare(basalt_colors) !== 0) {
       basalt_colors = configuration.KEY_COLORS_BASALT;
       setItem("basalt_colors", basalt_colors);
-    }
-    if(!isNaN(configuration.KEY_BT_SIGNAL) && configuration.KEY_BT_SIGNAL != basalt_bgBTSignal) {
-      basalt_bgBTSignal = configuration.KEY_BT_SIGNAL;
-      setItem("basalt_bgBTsignal", basalt_bgBTSignal);
     }
     if(!isNaN(configuration.KEY_BATTERY_SIGNAL) && configuration.KEY_BATTERY_SIGNAL != basalt_minBatterySignal) {
       basalt_minBatterySignal = configuration.KEY_BATTERY_SIGNAL;
