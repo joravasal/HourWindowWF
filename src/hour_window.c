@@ -218,7 +218,10 @@ static void update_minute_hand_proc(Layer *layer, GContext *ctx) {
 	}
   
   static void apply_colors() {
-    char str_color1[7];
+    int string_num = (EDITABLE_COLORS_LENGTH - 1) / 6;
+    char color_strings[string_num][7];
+    int colorInts[string_num];
+    /*char str_color1[7];
 		char str_color2[7];
     char str_color3[7];
     char str_color4[7];
@@ -226,10 +229,15 @@ static void update_minute_hand_proc(Layer *layer, GContext *ctx) {
     char str_color6[7];
     char str_color7[7];
     char str_color8[7];
-    char str_color9[7];
+    char str_color9[7];*/
 
 		if (strlen(basalt_colors) >= EDITABLE_COLORS_LENGTH - 1) {
-			memcpy(str_color1, &basalt_colors[0], 6);
+      for (int i = 0; i < string_num; i++) {
+        memcpy(color_strings[i], &basalt_colors[6*i], 6);
+        color_strings[i][6] = '\0';
+        colorInts[i] = HexStringToUInt(color_strings[i]);
+      }
+			/*memcpy(str_color1, &basalt_colors[0], 6);
 			memcpy(str_color2, &basalt_colors[6], 6);
       memcpy(str_color3, &basalt_colors[12], 6);
       memcpy(str_color4, &basalt_colors[18], 6);
@@ -246,11 +254,11 @@ static void update_minute_hand_proc(Layer *layer, GContext *ctx) {
       str_color6[6] = '\0';
       str_color7[6] = '\0';
       str_color8[6] = '\0';
-      str_color9[6] = '\0';
+      str_color9[6] = '\0';*/
 		}
 		else return;
 
-		int bgColorInt = HexStringToUInt(str_color1);
+		/*int bgColorInt = HexStringToUInt(str_color1);
     int textColorInt = HexStringToUInt(str_color2);
 		int diskFillColorInt = HexStringToUInt(str_color3);
     int diskStrokeColorInt = HexStringToUInt(str_color4);
@@ -258,23 +266,41 @@ static void update_minute_hand_proc(Layer *layer, GContext *ctx) {
     int minFillColorInt = HexStringToUInt(str_color6);
     int minStrokeColorInt = HexStringToUInt(str_color7);
     int bluetoothConnectedColorInt = HexStringToUInt(str_color8);
-    int bluetoothDisconnectedColorInt = HexStringToUInt(str_color9);
+    int bluetoothDisconnectedColorInt = HexStringToUInt(str_color9);*/
+    
+    bgColor = GColorFromHEX(colorInts[0]);
+    textColor = GColorFromHEX(colorInts[1]);
+    
+    discFill = GColorFromHEX(colorInts[2]);
+    discStroke = GColorFromHEX(colorInts[3]);
+    
+    windowStroke = GColorFromHEX(colorInts[4]);
+    
+    minuteHandFill = GColorFromHEX(colorInts[5]);
+    minuteHandStroke = GColorFromHEX(colorInts[6]);
+    
+    bluetoothConnectedColor = GColorFromHEX(colorInts[7]);
+    bluetoothDisconnectedColor = GColorFromHEX(colorInts[8]);
+    
+    middleDotColor = GColorFromHEX(colorInts[2]);
+    windowFill = GColorFromHEX(colorInts[0]);
+    /*bgColor = GColorFromHEX(bgColorInt);
+    textColor = GColorFromHEX(textColorInt);
+    
+    discFill = GColorFromHEX(diskFillColorInt);
+    discStroke = GColorFromHEX(diskStrokeColorInt);
+    
+    windowStroke = GColorFromHEX(hourWindowStrokeColorInt);
     
     minuteHandFill = GColorFromHEX(minFillColorInt);
     minuteHandStroke = GColorFromHEX(minStrokeColorInt);
     
-    middleDotColor = GColorFromHEX(diskFillColorInt);
-    discFill = GColorFromHEX(diskFillColorInt);
-    discStroke = GColorFromHEX(diskStrokeColorInt);
-    
-    bgColor = GColorFromHEX(bgColorInt);
-    textColor = GColorFromHEX(textColorInt);
-    
-    windowFill = GColorFromHEX(bgColorInt);
-    windowStroke = GColorFromHEX(hourWindowStrokeColorInt);
-    
     bluetoothConnectedColor = GColorFromHEX(bluetoothConnectedColorInt);
     bluetoothDisconnectedColor = GColorFromHEX(bluetoothDisconnectedColorInt);
+    
+    middleDotColor = GColorFromHEX(diskFillColorInt);
+    windowFill = GColorFromHEX(bgColorInt);*/
+    
   }
 #else
   static void apply_colors(int theme, int min_color, int hour_color) {
