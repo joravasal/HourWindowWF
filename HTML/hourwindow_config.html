@@ -7,7 +7,7 @@
             <link rel='stylesheet' href='jquery/mobile/jquery.mobile-1.4.5.min.css' />
             <script src='jquery/jquery-1.11.0.min.js'></script>
             <script src='jquery/mobile/jquery.mobile-1.4.5.min.js'></script>
-            <script src='hourwindow_config.js'></script>
+            <script src='hourwindow_config_1.1.js'></script>
             <style>
                 .ui-header .ui-title 
                 { 
@@ -48,18 +48,29 @@
             </div>
 
             <div id="settings" data-role="content">
+                <div id="bluetooth_signal" data-role="fieldcontain">
+                    <fieldset data-role="controlgroup" data-type="horizontal">
+                        <legend>Indicate BlueTooth status</legend>
+                        <input id="bluetooth_signal_0" name="bluetooth_signal" value="0" type="radio">
+                        <label for="bluetooth_signal_0">OFF</label>
+                        <input id="bluetooth_signal_1" name="bluetooth_signal" value="1" type="radio">
+                        <label for="bluetooth_signal_1">ON (Background Color)</label>
+                        <input id="bluetooth_signal_2" name="bluetooth_signal" value="2" type="radio">
+                        <label for="bluetooth_signal_2">ON (Disc Color)</label>
+                        <input id="bluetooth_signal_3" name="bluetooth_signal" value="3" type="radio">
+                        <label for="bluetooth_signal_3">ON (Minute Hand Color)</label>
+                    </fieldset>
+                </div>
                 
 <!-- Settings for Basalt -->
                 
-                <div id="bg_bluetooth_signal" data-role="fieldcontain" class="hidden">
-                    <fieldset data-role="controlgroup" data-type="horizontal">
-                        <legend>Use background as BT indicator</legend>
-                        <input id="bg_bluetooth_signal_1" name="bg_bluetooth_signal" value="1" type="radio">
-                        <label for="bg_bluetooth_signal_1">ON</label>
-                        <input id="bg_bluetooth_signal_0" name="bg_bluetooth_signal" value="0" type="radio">
-                        <label for="bg_bluetooth_signal_0">OFF</label>
-                    </fieldset>
+                <div id="bt_color" data-role="fieldcontain" class="hidden">
+                    <label for="background-color">BlueTooth Connected Color</label>
+                    <a href="#color-picker" data-rel="popup" class="ui-btn ui-corner-all" data-position-to="window" id="bt_con_color_color_box" style="height: 5vw; background-color: #55FF55"></a>
+                    <label for="background-color">BlueTooth Disconnected Color</label>
+                    <a href="#color-picker" data-rel="popup" class="ui-btn ui-corner-all" data-position-to="window" id="bt_dis_color_color_box" style="height: 5vw; background-color: #FF5555"></a>
                 </div>
+                
                 <div id="bg_color" data-role="fieldcontain" class="hidden">
                     <label for="background-color">Background Color</label>
                     <a href="#color-picker" data-rel="popup" class="ui-btn ui-corner-all" data-position-to="window" id="bg_color_box" style="height: 5vw; background-color: #00AAFF;"></a>
@@ -78,7 +89,7 @@
                 </div>
                 
                 <div id="hour_window_color" data-role="fieldcontain" class="hidden">
-                    <label for="background-color">Hour window stroke color</label>
+                    <label for="background-color">Hour Window Stroke Color</label>
                     <a href="#color-picker" data-rel="popup" class="ui-btn ui-corner-all" data-position-to="window" id="hour_window_color_box" style="height: 5vw; background-color: #FFFFFF;"></a>
                 </div>
                 
@@ -114,7 +125,7 @@
                 
                 <div id="hour_window_color_aplite" data-role="fieldcontain" class="hidden">
                     <fieldset data-role="controlgroup" data-type="horizontal">
-                        <legend>Hour window and text color</legend>
+                        <legend>Hour Window and Text Color</legend>
                         <input id="hour_window_color_aplite_1" name="hour_window_color_aplite" value="1" type="radio">
                         <label for="hour_window_color_aplite_1">White background with black text</label>
                         <input id="hour_window_color_aplite_0" name="hour_window_color_aplite" value="0" type="radio">
@@ -124,7 +135,7 @@
                 
                 <div id="minute_hand_color_aplite" data-role="fieldcontain" class="hidden">
                     <fieldset data-role="controlgroup" data-type="horizontal">
-                        <legend>Minute hand color</legend>
+                        <legend>Minute Hand Color</legend>
                         <input id="minute_hand_color_aplite_1" name="minute_hand_color_aplite" value="1" type="radio">
                         <label for="minute_hand_color_aplite_1">White</label>
                         <input id="minute_hand_color_aplite_0" name="minute_hand_color_aplite" value="0" type="radio">
