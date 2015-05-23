@@ -1,5 +1,5 @@
 var watch_version = -1;
-var COLOR_STRING_LENGTH = 42;
+var COLOR_STRING_LENGTH = 54;
 
 //Function to convert hex format to a rgb color
 function rgb2hex(rgb){
@@ -11,11 +11,23 @@ function rgb2hex(rgb){
 }
 
 $(function () {
-  $('#bg_bluetooth_signal').on('click', function (event) {
-	if(parseInt($("input[name=bg_bluetooth_signal]:checked").val(), 10) == 0)
+  $('#bluetooth_signal').change(function() {
+        btSignal = parseInt($("input[name=bluetooth_signal]:checked").val(), 10);
+        if(watch_version >= 3) {
+            $('#bt_color').removeClass("hidden");
             $('#bg_color').removeClass("hidden");
-        else
-            $('#bg_color').addClass("hidden");
+            $('#disk_color').removeClass("hidden");
+            $('#min_color').removeClass("hidden");
+            if(btSignal == 0) {
+                $('#bt_color').addClass("hidden");
+            } else if(btSignal == 1) {
+                $('#bg_color').addClass("hidden");
+            } else if(btSignal == 2) {
+                $('#disk_color').addClass("hidden");
+            } else if(btSignal == 3) {
+                $('#min_color').addClass("hidden");
+            }
+        }
   });
 });
 
@@ -77,6 +89,20 @@ $(function () {
   });
 });
 
+$(function () {
+  $('#bt_con_color_color_box').on('click', function (event) {
+	changeColorObject = 7;
+	highlightColorBox($(this));
+  });
+});
+
+$(function () {
+  $('#bt_dis_color_color_box').on('click', function (event) {
+	changeColorObject = 8;
+	highlightColorBox($(this));
+  });
+});
+
 function highlightColorBox($colorButton) {
 	selectedColor = rgb2hex($colorButton.css("background-color"));
 	
@@ -104,9 +130,13 @@ $(function () {
 		$('#hour_window_color_box').css('background-color', selected_color);
         else if(changeColorObject == 5)
 		$('#min_fill_color_box').css('background-color', selected_color);
-        else
+        else if(changeColorObject == 6)
                 $('#min_stroke_color_box').css('background-color', selected_color);
-	$( "#color-picker" ).popup( "close" );   
+        else if(changeColorObject == 7)
+                $('#bt_con_color_color_box').css('background-color', selected_color);
+        else if(changeColorObject == 8)
+                $('#bt_dis_color_color_box').css('background-color', selected_color);
+	$( "#color-picker" ).popup( "close" );
   });
 });
 
@@ -157,12 +187,12 @@ function saveOptions() {
 
 	var options = {};
 	
+        options.KEY_BT_SIGNAL = parseInt($("input[name=bluetooth_signal]:checked").val(), 10);
         if (watch_version < 3){
             options.KEY_THEME_APLITE = parseInt($("#theme_aplite_select").val(), 10);
             options.KEY_HOUR_COLOR_APLITE = parseInt($("input[name=hour_window_color_aplite]:checked").val(), 10);
             options.KEY_MIN_COLOR_APLITE = parseInt($("input[name=minute_hand_color_aplite]:checked").val(), 10);
         } else {
-            options.KEY_BT_SIGNAL = parseInt($("input[name=bg_bluetooth_signal]:checked").val(), 10);
             options.KEY_BATTERY_SIGNAL = parseInt($("input[name=min_battery_signal]:checked").val(), 10);
             
             var colors = rgb2hex($('#bg_color_box').css("background-color")).replace("#", '');
@@ -175,6 +205,9 @@ function saveOptions() {
             colors = colors + rgb2hex($('#min_fill_color_box').css("background-color")).replace("#", '');
             colors = colors + rgb2hex($('#min_stroke_color_box').css("background-color")).replace("#", '');
             
+            colors = colors + rgb2hex($('#bt_con_color_color_box').css("background-color")).replace("#", '');
+            colors = colors + rgb2hex($('#bt_dis_color_color_box').css("background-color")).replace("#", '');
+            
             options.KEY_COLORS_BASALT = colors;
 
         }
@@ -183,20 +216,19 @@ function saveOptions() {
 
 $("document").ready(function() {
 	watch_version = getQueryParam("watch_version", 1);
+        
+        var btSignal = getQueryParam("btSignal", 1);
+        btSignal = parseInt(isNumber(btSignal) && btSignal <= 5 ? btSignal : 1);
+        $('#bluetooth_signal_'+btSignal).prop( "checked", true ).checkboxradio("refresh");
 	
 	if (watch_version >= 3) {
-            var bgBTSignal = getQueryParam("bgBT", 0);
-            bgBTSignal = parseInt(isNumber(bgBTSignal) && bgBTSignal <= 1 ? bgBTSignal : 0);
-            //$('#bg_bluetooth_signal').removeClass("hidden");
-            $('#bg_bluetooth_signal_'+bgBTSignal).prop( "checked", true ).checkboxradio("refresh");
-            
             var minBatterySignal = getQueryParam("bgBT", 0);
             minBatterySignal = parseInt(isNumber(minBatterySignal) && minBatterySignal <= 1 ? minBatterySignal : 0);
             //$('#min_battery_signal').removeClass("hidden");
             $('#min_battery_signal_'+minBatterySignal).prop( "checked", true ).checkboxradio("refresh");
             
             var basalt_colors = getQueryParam("basalt_colors", 0);
-            basalt_colors = basalt_colors.length == COLOR_STRING_LENGTH ? basalt_colors : "FFFFFF000000555555AAAAAAFFFFFFAA0000FF0000";
+            basalt_colors = basalt_colors.length == COLOR_STRING_LENGTH ? basalt_colors : "FFFFFF000000555555AAAAAAFFFFFFFF0000FF000055FF55FF5555";
             $('#bg_color_box').css('background-color', "#"+basalt_colors.substring(0,6));
             $('#text_color_box').css('background-color', "#"+basalt_colors.substring(6,12));
             $('#disk_fill_color_box').css('background-color', "#"+basalt_colors.substring(12,18));
@@ -204,14 +236,28 @@ $("document").ready(function() {
             $('#hour_window_color_box').css('background-color', "#"+basalt_colors.substring(24,30));
             $('#min_fill_color_box').css('background-color', "#"+basalt_colors.substring(30,36));
             $('#min_stroke_color_box').css('background-color', "#"+basalt_colors.substring(36,42));
+            $('#bt_con_color_color_box').css('background-color', "#"+basalt_colors.substring(42,48));
+            $('#bt_dis_color_color_box').css('background-color', "#"+basalt_colors.substring(48,54));
             
-            if(bgBTSignal == 0)
+            if(btSignal != 0) {
+                $('#bt_color').removeClass("hidden");
+            }
+            
+            if(btSignal != 1) {
                 $('#bg_color').removeClass("hidden");
+            }
+            
             $('#text_color').removeClass("hidden");
-            $('#disk_color').removeClass("hidden");
+            
+            if(btSignal != 2) {
+                $('#disk_color').removeClass("hidden");
+            }
+            
             $('#hour_window_color').removeClass("hidden");
-            if(minBatterySignal == 0)
+            
+            if(btSignal != 3) {
                 $('#min_color').removeClass("hidden");
+            }
             
 	} else {
             var min_color_aplite = getQueryParam("min_color_aplite", 1);
