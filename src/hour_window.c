@@ -2,6 +2,7 @@
 #include <ctype.h>
 #include "gpath_builder.h"
 #include "hour_window.h"
+#include "pebble-assist.h"
 
 Window *window;
 static Layer *minute_hand_layer;
@@ -15,6 +16,7 @@ static GPath *window_path;
 static GPath *blocker_path;
 static GPoint center;
 
+int bluetooth_vibrate = 2;
 int bluetooth_mode = 0;
 #ifdef PBL_COLOR
   char basalt_colors[EDITABLE_COLORS_LENGTH];
@@ -32,12 +34,18 @@ static GColor windowStroke;
 static GColor bluetoothDisconnectedColor;
 static GColor bluetoothConnectedColor;
 
+static GBitmap *bt_disc_bm;
+static GBitmap *bt_conn_bm;
+static BitmapLayer *bt_status_conn_layer;
+static BitmapLayer *bt_status_disc_layer;
+
 AppTimer *timer;
 const int timer_delay = 40;
 int current_angle = 0;
 int timer_angle = 360;
 
 static void minute_tick_handler(struct tm *tick_time, TimeUnits units_changed) {
+  LOG("Tick handler: minute");
   layer_mark_dirty(minute_hand_layer);
 }
 
@@ -47,7 +55,13 @@ void timer_callback(void *data) {
 }
 
 static void bt_handler(bool connected) {
+  LOG("BlueTooth service changed, connected: %d", connected);
+  DEBUG("BlueTooth mode: %d", bluetooth_mode);
   if(connected == true) {
+    if(bluetooth_vibrate == BT_VIBRATE_ON){
+      vibes_short_pulse();
+    }
+    
     switch(bluetooth_mode) {
       case BT_CHANGE_BG:
         bgColor = bluetoothConnectedColor;
@@ -57,11 +71,15 @@ static void bt_handler(bool connected) {
         window_set_background_color(window, bgColor);
         layer_mark_dirty(background_layer);
         break;
-      case BT_CHANGE_DISC:
+      case BT_CHANGE_DISC_FILL:
         discFill = bluetoothConnectedColor;
         layer_mark_dirty(background_layer);
         break;
-      case BT_CHANGE_MIN_HANDLE:
+      case BT_CHANGE_DISC_STROKE:
+        discStroke = bluetoothConnectedColor;
+        layer_mark_dirty(background_layer);
+        break;
+      case BT_CHANGE_MIN_HANDLE_FILL:
         minuteHandFill = bluetoothConnectedColor;
         #ifdef PBL_BW
           minuteHandStroke = bluetoothDisconnectedColor;
@@ -69,9 +87,32 @@ static void bt_handler(bool connected) {
         #endif
         layer_mark_dirty(minute_hand_layer);
         break;
+      case BT_CHANGE_MIN_HANDLE_STROKE:
+        minuteHandStroke = bluetoothConnectedColor;
+        #ifdef PBL_BW
+          minuteHandFill = bluetoothDisconnectedColor;
+          middleDotColor = bluetoothDisconnectedColor;
+        #endif
+        layer_mark_dirty(minute_hand_layer);
+        break;
+      case BT_ICON:
+        layer_show(bt_status_conn_layer);
+        layer_hide(bt_status_disc_layer);
+        break;
+      case BT_ICON_ONLY_DISC:
+        layer_hide(bt_status_conn_layer);
+        layer_hide(bt_status_disc_layer);
+        break;
+      default:
+        //Nothing to do, no notification
+        break;
     }
   }
   else {
+    if(bluetooth_vibrate == BT_VIBRATE_ON || bluetooth_vibrate == BT_VIBRATE_ON_DISC){
+      vibes_double_pulse();
+    }
+    
     switch(bluetooth_mode) {
       case BT_CHANGE_BG:
         bgColor = bluetoothDisconnectedColor;
@@ -81,11 +122,15 @@ static void bt_handler(bool connected) {
         window_set_background_color(window, bgColor);
         layer_mark_dirty(background_layer);
         break;
-      case BT_CHANGE_DISC:
+      case BT_CHANGE_DISC_FILL:
         discFill = bluetoothDisconnectedColor;
         layer_mark_dirty(background_layer);
         break;
-      case BT_CHANGE_MIN_HANDLE:
+      case BT_CHANGE_DISC_STROKE:
+        discStroke = bluetoothDisconnectedColor;
+        layer_mark_dirty(background_layer);
+        break;
+      case BT_CHANGE_MIN_HANDLE_FILL:
         minuteHandFill = bluetoothDisconnectedColor;
         #ifdef PBL_BW
           minuteHandStroke = bluetoothConnectedColor;
@@ -93,12 +138,28 @@ static void bt_handler(bool connected) {
         #endif
         layer_mark_dirty(minute_hand_layer);
         break;
+      case BT_CHANGE_MIN_HANDLE_STROKE:
+        minuteHandStroke = bluetoothDisconnectedColor;
+        #ifdef PBL_BW
+          minuteHandFill = bluetoothConnectedColor;
+          middleDotColor = bluetoothConnectedColor;
+        #endif
+        layer_mark_dirty(minute_hand_layer);
+        break;
+      case BT_ICON:
+      case BT_ICON_ONLY_DISC:
+        layer_show(bt_status_disc_layer);
+        layer_hide(bt_status_conn_layer);
+        break;
+      default:
+        //Nothing to do, no notification
+        break;
     }
   }
 }
 
 static void update_window_proc(Layer *layer, GContext *ctx) {
-  APP_LOG(APP_LOG_LEVEL_DEBUG_VERBOSE, "updating window layer");
+  LOG("Updating Window layer");
   
   time_t now = time(NULL);
   struct tm *t = localtime(&now);
@@ -110,16 +171,16 @@ static void update_window_proc(Layer *layer, GContext *ctx) {
   int prevHour = hour - 1;
   //Update hour text
   if(clock_is_24h_style() == true) {
-    strftime(buffer, sizeof(buffer), "%H", t);
+    print_time(buffer, "%H", t);
     text_layer_set_text(hour_text_layer, buffer);
     if (prevHour < 0) prevHour = 23;
   } else {
-    strftime(buffer, sizeof(buffer), "%I", t);
+    print_time(buffer, "%I", t);
     text_layer_set_text(hour_text_layer, buffer);
     if (prevHour < 0) prevHour = 11;
   }
   
-  snprintf(buffer_prev, sizeof(buffer_prev), "%d", prevHour);
+  print_int(buffer_prev, "%d", prevHour);
   text_layer_set_text(last_hour_text_layer, buffer_prev);
   
   GPoint auxPoint = ANALOG_BG_HOUR_POINTS[hour % 12];
@@ -162,17 +223,18 @@ static void update_window_proc(Layer *layer, GContext *ctx) {
 }
 
 static void update_blockers_proc(Layer *layer, GContext *ctx) {
-    gpath_rotate_to(blocker_path, (((timer_angle + 30) % 360) * TRIG_MAX_ANGLE) / 360);
-    graphics_context_set_fill_color(ctx, discFill);
-    gpath_draw_filled(ctx, blocker_path);
-    
-    gpath_rotate_to(blocker_path, (((timer_angle - 30) % 360) * TRIG_MAX_ANGLE) / 360);
-    graphics_context_set_fill_color(ctx, discFill);
-    gpath_draw_filled(ctx, blocker_path);
+  LOG("Updating Blockers layer");
+  gpath_rotate_to(blocker_path, (((timer_angle + 30) % 360) * TRIG_MAX_ANGLE) / 360);
+  graphics_context_set_fill_color(ctx, discFill);
+  gpath_draw_filled(ctx, blocker_path);
+
+  gpath_rotate_to(blocker_path, (((timer_angle - 30) % 360) * TRIG_MAX_ANGLE) / 360);
+  graphics_context_set_fill_color(ctx, discFill);
+  gpath_draw_filled(ctx, blocker_path);
 }
 
 static void update_minute_hand_proc(Layer *layer, GContext *ctx) {
-  APP_LOG(APP_LOG_LEVEL_DEBUG_VERBOSE, "updating minute hand layer");
+  LOG("Updating minute hand layer");
   time_t now = time(NULL);
   struct tm *t = localtime(&now);
 
@@ -218,6 +280,7 @@ static void update_minute_hand_proc(Layer *layer, GContext *ctx) {
 	}
   
   static void apply_colors() {
+    LOG("Applying change in colors (TIME)");
     int string_num = (EDITABLE_COLORS_LENGTH - 1) / 6;
     char color_strings[string_num][7];
     int colorInts[string_num];
@@ -251,11 +314,12 @@ static void update_minute_hand_proc(Layer *layer, GContext *ctx) {
   }
 #else
   static void apply_colors(int theme, int min_color, int hour_color) {
+    LOG("Applying change in colors (OG)");
     if(min_color == 0) { // Black
       minuteHandFill = GColorBlack;
       minuteHandStroke = GColorWhite;
       middleDotColor = GColorWhite;
-      if (bluetooth_mode == BT_CHANGE_MIN_HANDLE) {
+      if (bluetooth_mode == BT_CHANGE_MIN_HANDLE_FILL) {
         bluetoothConnectedColor = GColorBlack;
         bluetoothDisconnectedColor = GColorWhite;
       }
@@ -263,7 +327,7 @@ static void update_minute_hand_proc(Layer *layer, GContext *ctx) {
       minuteHandFill = GColorWhite;
       minuteHandStroke = GColorBlack;
       middleDotColor = GColorBlack;
-      if (bluetooth_mode == BT_CHANGE_MIN_HANDLE) {
+      if (bluetooth_mode == BT_CHANGE_MIN_HANDLE_FILL) {
         bluetoothConnectedColor = GColorWhite;
         bluetoothDisconnectedColor = GColorBlack;
       }
@@ -287,10 +351,13 @@ static void update_minute_hand_proc(Layer *layer, GContext *ctx) {
         discStroke = GColorWhite;
         bluetoothConnectedColor = GColorWhite;
         bluetoothDisconnectedColor = GColorBlack;
-      } else if (bluetooth_mode == BT_CHANGE_DISC) {
+      } else if (bluetooth_mode == BT_CHANGE_DISC_FILL) {
         discStroke = GColorBlack;
         bluetoothConnectedColor = GColorBlack;
         bluetoothDisconnectedColor = GColorWhite;
+      } else if (bluetooth_mode == BT_ICON || bluetooth_mode == BT_ICON_ONLY_DISC) {
+        bitmap_layer_set_compositing_mode(bt_status_conn_layer, GCompOpAssignInverted);
+        bitmap_layer_set_compositing_mode(bt_status_disc_layer, GCompOpAssignInverted);
       }
     } else if(theme == INVERTED_COLORS) {
       discFill = GColorWhite;
@@ -300,10 +367,13 @@ static void update_minute_hand_proc(Layer *layer, GContext *ctx) {
         discStroke = GColorBlack;
         bluetoothConnectedColor = GColorBlack;
         bluetoothDisconnectedColor = GColorWhite;
-      } else if (bluetooth_mode == BT_CHANGE_DISC) {
+      } else if (bluetooth_mode == BT_CHANGE_DISC_FILL) {
         discStroke = GColorWhite;
         bluetoothConnectedColor = GColorWhite;
         bluetoothDisconnectedColor = GColorBlack;
+      } else if (bluetooth_mode == BT_ICON || bluetooth_mode == BT_ICON_ONLY_DISC) {
+        bitmap_layer_set_compositing_mode(bt_status_conn_layer, GCompOpAssign);
+        bitmap_layer_set_compositing_mode(bt_status_disc_layer, GCompOpAssign);
       }
     } else if(theme == SAME_COLORS_BLACK_CIRCLE) {
       discFill = GColorBlack;
@@ -312,9 +382,12 @@ static void update_minute_hand_proc(Layer *layer, GContext *ctx) {
       if (bluetooth_mode == BT_CHANGE_BG) {
         bluetoothConnectedColor = GColorBlack;
         bluetoothDisconnectedColor = GColorWhite;
-      } else if (bluetooth_mode == BT_CHANGE_DISC) {
+      } else if (bluetooth_mode == BT_CHANGE_DISC_FILL) {
         bluetoothConnectedColor = GColorBlack;
         bluetoothDisconnectedColor = GColorWhite;
+      } else if (bluetooth_mode == BT_ICON || bluetooth_mode == BT_ICON_ONLY_DISC) {
+        bitmap_layer_set_compositing_mode(bt_status_conn_layer, GCompOpAssign);
+        bitmap_layer_set_compositing_mode(bt_status_disc_layer, GCompOpAssign);
       }
     } else if(theme == SAME_COLORS_WHITE_CIRCLE) {
       discFill = GColorWhite;
@@ -323,9 +396,12 @@ static void update_minute_hand_proc(Layer *layer, GContext *ctx) {
       if (bluetooth_mode == BT_CHANGE_BG) {
         bluetoothConnectedColor = GColorWhite;
         bluetoothDisconnectedColor = GColorBlack;
-      } else if (bluetooth_mode == BT_CHANGE_DISC) {
+      } else if (bluetooth_mode == BT_CHANGE_DISC_FILL) {
         bluetoothConnectedColor = GColorWhite;
         bluetoothDisconnectedColor = GColorBlack;
+      } else if (bluetooth_mode == BT_ICON || bluetooth_mode == BT_ICON_ONLY_DISC) {
+        bitmap_layer_set_compositing_mode(bt_status_conn_layer, GCompOpAssignInverted);
+        bitmap_layer_set_compositing_mode(bt_status_disc_layer, GCompOpAssignInverted);
       }
     } else if(theme == SAME_COLORS_BLACK) {
       discFill = GColorBlack;
@@ -334,9 +410,12 @@ static void update_minute_hand_proc(Layer *layer, GContext *ctx) {
       if (bluetooth_mode == BT_CHANGE_BG) {
         bluetoothConnectedColor = GColorBlack;
         bluetoothDisconnectedColor = GColorWhite;
-      } else if (bluetooth_mode == BT_CHANGE_DISC) {
+      } else if (bluetooth_mode == BT_CHANGE_DISC_FILL) {
         bluetoothConnectedColor = GColorBlack;
         bluetoothDisconnectedColor = GColorWhite;
+      } else if (bluetooth_mode == BT_ICON || bluetooth_mode == BT_ICON_ONLY_DISC) {
+        bitmap_layer_set_compositing_mode(bt_status_conn_layer, GCompOpAssign);
+        bitmap_layer_set_compositing_mode(bt_status_disc_layer, GCompOpAssign);
       }
     } else if(theme == SAME_COLORS_WHITE) {
       discFill = GColorWhite;
@@ -345,17 +424,22 @@ static void update_minute_hand_proc(Layer *layer, GContext *ctx) {
       if (bluetooth_mode == BT_CHANGE_BG) {
         bluetoothConnectedColor = GColorWhite;
         bluetoothDisconnectedColor = GColorBlack;
-      } else if (bluetooth_mode == BT_CHANGE_DISC) {
+      } else if (bluetooth_mode == BT_CHANGE_DISC_FILL) {
         bluetoothConnectedColor = GColorWhite;
         bluetoothDisconnectedColor = GColorBlack;
+      } else if (bluetooth_mode == BT_ICON || bluetooth_mode == BT_ICON_ONLY_DISC) {
+        bitmap_layer_set_compositing_mode(bt_status_conn_layer, GCompOpAssignInverted);
+        bitmap_layer_set_compositing_mode(bt_status_disc_layer, GCompOpAssignInverted);
       }
     }
   }
 #endif
 
 static void in_recv_handler(DictionaryIterator *iterator, void *context) {
-  APP_LOG(APP_LOG_LEVEL_DEBUG_VERBOSE, "JS message received");
+  LOG("JS message received");
   Tuple *t = dict_read_first(iterator);
+  int new_bt_mode = -1;
+  int new_bt_vibrate = -1;
   #ifdef PBL_COLOR
     char new_colors[EDITABLE_COLORS_LENGTH];
   #else
@@ -366,9 +450,21 @@ static void in_recv_handler(DictionaryIterator *iterator, void *context) {
   while(t) {
     switch (t->key) {
     
+    case KEY_BT_VIBRATE:
+      new_bt_vibrate = t->value->int16;
+      if (new_bt_vibrate > -1 && new_bt_vibrate <= 2 &&
+          (new_bt_vibrate != bluetooth_vibrate || !persist_exists(KEY_BT_VIBRATE))) {
+        bluetooth_vibrate = new_bt_vibrate;
+        persist_write_int(KEY_BT_VIBRATE, new_bt_vibrate);
+      }
+      break;
     case KEY_BT_SIGNAL:
-      bluetooth_mode = t->value->int16;
-      persist_write_int(KEY_BT_SIGNAL, t->value->int16);
+      new_bt_mode = t->value->int16;
+      if (new_bt_mode > -1 && new_bt_mode <= 7 &&
+          (new_bt_mode != bluetooth_mode || !persist_exists(KEY_BT_SIGNAL))) {
+        bluetooth_mode = new_bt_mode;
+        persist_write_int(KEY_BT_SIGNAL, new_bt_mode);
+      }
       break;
       
     #ifdef PBL_COLOR
@@ -434,24 +530,22 @@ static void in_recv_handler(DictionaryIterator *iterator, void *context) {
 }
 
 static void window_load(Window *window) {
-  bluetooth_mode = persist_exists(KEY_BT_SIGNAL) ? persist_read_int(KEY_BT_SIGNAL) : BT_CHANGE_BG;
+  LOG("Window loading");
+  bluetooth_vibrate = persist_read_int_safe(KEY_BT_VIBRATE, BT_VIBRATE_ON_DISC);
+  bluetooth_mode = persist_read_int_safe(KEY_BT_SIGNAL, BT_CHANGE_BG);
   #ifdef PBL_COLOR
-		if (persist_exists(KEY_COLORS_BASALT))
-			persist_read_string(KEY_COLORS_BASALT, basalt_colors, EDITABLE_COLORS_LENGTH);
-		else
-			memcpy(basalt_colors, "FFFFFF000000555555AAAAAAFFFFFFFF0000FF000055FF55FF5555"+'\0', EDITABLE_COLORS_LENGTH);
+    memcpy(basalt_colors, "FFFFFF000000555555AAAAAAFFFFFFFF0000FF000055FF55FF5555"+'\0', EDITABLE_COLORS_LENGTH);
+		persist_read_string(KEY_COLORS_BASALT, basalt_colors, EDITABLE_COLORS_LENGTH);
     apply_colors();
 	#else
-		int aplite_theme = persist_exists(KEY_THEME_APLITE) ? persist_read_int(KEY_THEME_APLITE) : ORIGINAL_COLORS;
-    int min_color_aplite = persist_exists(KEY_MIN_COLOR_APLITE) ? persist_read_int(KEY_MIN_COLOR_APLITE) : 1;
-    int hour_color_aplite = persist_exists(KEY_HOUR_COLOR_APLITE) ? persist_read_int(KEY_HOUR_COLOR_APLITE) : 1;
+		int aplite_theme = persist_read_int_safe(KEY_THEME_APLITE, ORIGINAL_COLORS);
+    int min_color_aplite = persist_read_int_safe(KEY_MIN_COLOR_APLITE, 1);
+    int hour_color_aplite = persist_read_int_safe(KEY_HOUR_COLOR_APLITE, 1);
     apply_colors(aplite_theme, min_color_aplite, hour_color_aplite);
 	#endif
-  bt_handler(bluetooth_connection_service_peek());
-    
-  Layer *window_layer = window_get_root_layer(window);
+  
   window_set_background_color(window, bgColor);
-  GRect bounds = layer_get_bounds(window_layer);
+  GRect bounds = window_get_bounds(window);
   center = grect_center_point(&bounds);
   
   gpath_move_to(window_path, center);
@@ -460,51 +554,73 @@ static void window_load(Window *window) {
 
   background_layer = layer_create(bounds);
   layer_set_update_proc(background_layer, update_window_proc);
-  layer_add_child(window_layer, background_layer);
+  layer_add_to_window(background_layer, window);
+  
+  bt_disc_bm = gbitmap_create_with_resource(RESOURCE_ID_BLUETOOTH_DISCONNECTED_ICON);
+  bt_conn_bm = gbitmap_create_with_resource(RESOURCE_ID_BLUETOOTH_CONNECTED_ICON);
+  bt_status_conn_layer = bitmap_layer_create(GRect(2, 2, BT_ICON_WIDTH, BT_ICON_HEIGHT));
+  bt_status_disc_layer = bitmap_layer_create(GRect(2, 2, BT_ICON_WIDTH, BT_ICON_HEIGHT));
+#ifdef PBL_COLOR
+  bitmap_layer_set_transparent(bt_status_conn_layer);
+  bitmap_layer_set_transparent(bt_status_disc_layer);
+#endif
+  bitmap_layer_set_bitmap(bt_status_conn_layer, bt_conn_bm);
+  bitmap_layer_set_bitmap(bt_status_disc_layer, bt_disc_bm);
+  bitmap_layer_add_to_layer(bt_status_conn_layer, background_layer);
+  bitmap_layer_add_to_layer(bt_status_disc_layer, background_layer);
+  layer_hide(bt_status_disc_layer);
+  layer_hide(bt_status_conn_layer);
   
   hour_text_layer = text_layer_create(GRect(0, 0, TEXT_WIDTH, TEXT_HEIGHT));
-  text_layer_set_background_color(hour_text_layer, GColorClear);
-  text_layer_set_text_color(hour_text_layer, textColor);
+  text_layer_set_colors(hour_text_layer, textColor, GColorClear);
   text_layer_set_text_alignment(hour_text_layer, GTextAlignmentCenter);
-  text_layer_set_font(hour_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18));
+  text_layer_set_system_font(hour_text_layer, FONT_KEY_GOTHIC_18);
   
   last_hour_text_layer = text_layer_create(GRect(0, 0, TEXT_WIDTH, TEXT_HEIGHT));
-  text_layer_set_background_color(last_hour_text_layer, GColorClear);
-  text_layer_set_text_color(last_hour_text_layer, textColor);
+  text_layer_set_colors(last_hour_text_layer, textColor, GColorClear);
   text_layer_set_text_alignment(last_hour_text_layer, GTextAlignmentCenter);
-  text_layer_set_font(last_hour_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18));
+  text_layer_set_system_font(last_hour_text_layer, FONT_KEY_GOTHIC_18);
   
-  layer_add_child(window_layer, text_layer_get_layer(hour_text_layer));
-  layer_add_child(window_layer, text_layer_get_layer(last_hour_text_layer));
+  text_layer_add_to_window(hour_text_layer, window);
+  text_layer_add_to_window(last_hour_text_layer, window);
   
   blocker_layer = layer_create(bounds);
   layer_set_update_proc(blocker_layer, update_blockers_proc);
-  layer_add_child(window_layer, blocker_layer);
+  layer_add_to_window(blocker_layer, window);
   
   minute_hand_layer = layer_create(bounds);
   layer_set_update_proc(minute_hand_layer, update_minute_hand_proc);
-  layer_add_child(window_layer, minute_hand_layer);
+  layer_add_to_window(minute_hand_layer, window);
+  
+  bt_handler(bluetooth_connection_service_peek());
 }
 
 static void window_unload(Window *window) {
-  layer_destroy(minute_hand_layer);
-  layer_destroy(background_layer);
+  LOG("Window unloading");
+  layer_destroy_safe(minute_hand_layer);
+  layer_destroy_safe(background_layer);
+  layer_destroy_safe(blocker_layer);
   
-  text_layer_destroy(hour_text_layer);
-  text_layer_destroy(last_hour_text_layer);
+  bitmap_layer_destroy_safe(bt_status_conn_layer);
+  bitmap_layer_destroy_safe(bt_status_disc_layer);
+  gbitmap_destroy_safe(bt_disc_bm);
+  gbitmap_destroy_safe(bt_conn_bm);
+  
+  text_layer_destroy_safe(hour_text_layer);
+  text_layer_destroy_safe(last_hour_text_layer);
 }
 
 void handle_init(void) {
+  LOG("INIT");
   window = window_create();
-  Layer *window_layer = window_get_root_layer(window);
-  
-  window_set_window_handlers(window, (WindowHandlers) {
-    .load = window_load,
-    .unload = window_unload,
-  });
+  if(NULL == window) {
+    APP_LOG(APP_LOG_LEVEL_ERROR, "Window creation failed!! :O");
+    return;
+  }
+  window_handlers(window, window_load, window_unload);
   
   app_message_register_inbox_received((AppMessageInboxReceived) in_recv_handler);
-  app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
+  app_message_open_max();
   
   minute_arrow = gpath_create(&MINUTE_HAND_POINTS);
   
@@ -515,10 +631,8 @@ void handle_init(void) {
   gpath_builder_curve_to_point(builder, WINDOW_POINTS[4], WINDOW_POINTS[2], WINDOW_POINTS[3]);
   gpath_builder_line_to_point(builder, WINDOW_POINTS[0]);
   window_path = gpath_builder_create_path(builder);
-  gpath_builder_destroy(builder);
   
   //Create the blocker for the extra text in the animations
-  builder = gpath_builder_create(MAX_POINTS);
   gpath_builder_move_to_point(builder, HOUR_BLOCKER[0]);
   gpath_builder_line_to_point(builder, HOUR_BLOCKER[1]);
   gpath_builder_curve_to_point(builder, HOUR_BLOCKER[4], HOUR_BLOCKER[2], HOUR_BLOCKER[3]);
@@ -526,21 +640,22 @@ void handle_init(void) {
   blocker_path = gpath_builder_create_path(builder);
   gpath_builder_destroy(builder);
   
+  // Bluetooth subscription
+  bluetooth_connection_service_subscribe(bt_handler);
+  
   // Show the Window on the watch, with animated=true
   window_stack_push(window, true);
   
   // Register with TickTimerService
   tick_timer_service_subscribe(MINUTE_UNIT, minute_tick_handler);
-  
-  // Bluetooth subscription
-  bluetooth_connection_service_subscribe(bt_handler);
 }
 
 void handle_deinit(void) {
-  window_destroy(window);
-  gpath_destroy(minute_arrow);
-  gpath_destroy(window_path);
-  gpath_destroy(blocker_path);
+  LOG("DEINIT");
+  window_destroy_safe(window);
+  gpath_destroy_safe(minute_arrow);
+  gpath_destroy_safe(window_path);
+  gpath_destroy_safe(blocker_path);
 }
 
 int main(void) {

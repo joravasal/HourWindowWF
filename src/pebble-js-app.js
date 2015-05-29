@@ -4,6 +4,7 @@ var aplite_min_color = 1;
 
 var basalt_colors = -1;
 var bt_signal = 0;
+var bt_vibrate = 2;
 var basalt_minBatterySignal = 0;
 
 function getItem(reference) {
@@ -18,6 +19,9 @@ function setItem(reference, item) {
 function loadLocalVariables() {
   bt_signal = parseInt(getItem("bt_signal"));
   bt_signal = !bt_signal ? 1 : bt_signal;
+  
+  bt_vibrate = parseInt(getItem("bt_vibrate"));
+  bt_vibrate = !bt_vibrate ? 2 : bt_vibrate;
   
 	aplite_theme = parseInt(getItem("theme_aplite"));
   aplite_hour_color = parseInt(getItem("hour_color_aplite"));
@@ -45,7 +49,7 @@ Pebble.addEventListener("showConfiguration",
   function(e) {
     //Load the remote config page
     var url = 'https://dl.dropboxusercontent.com/u/3223915/Pebble_config_pages/hourwindow_config_test.html'+
-		'?watch_version=' + getWatchVersion() + '&btSignal=' + bt_signal;
+		'?watch_version=' + getWatchVersion() + '&btSignal=' + bt_signal + '&btVibrate=' + bt_vibrate;
     if (getWatchVersion() < 3) {
       url = url + '&theme_aplite=' + aplite_theme +
           '&hour_color_aplite=' + aplite_hour_color +
@@ -68,6 +72,11 @@ Pebble.addEventListener("webviewclosed",
     if(!isNaN(configuration.KEY_BT_SIGNAL) && configuration.KEY_BT_SIGNAL != bt_signal) {
       bt_signal = configuration.KEY_BT_SIGNAL;
       setItem("bt_signal", bt_signal);
+    }
+    
+    if(!isNaN(configuration.KEY_BT_VIBRATE) && configuration.KEY_BT_VIBRATE != bt_vibrate) {
+      bt_vibrate = configuration.KEY_BT_VIBRATE;
+      setItem("bt_vibrate", bt_vibrate);
     }
  
     if(!isNaN(configuration.KEY_THEME_APLITE) && configuration.KEY_THEME_APLITE != aplite_theme) {

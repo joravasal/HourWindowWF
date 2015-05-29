@@ -8,17 +8,28 @@
 #define KEY_COLORS_BASALT 3
 #define KEY_BT_SIGNAL 4
 #define KEY_BATTERY_SIGNAL 5
+#define KEY_BT_VIBRATE 6
   
 // Each color has a length of 6 plus the ending char
 #define EDITABLE_COLORS_LENGTH 55
+
+// Bluetooth vibration notification
+#define BT_VIBRATE_OFF 0
+#define BT_VIBRATE_ON 1
+#define BT_VIBRATE_ON_DISC 2
   
 // Bluetooth modes
 #define BT_OFF  0 //no status visible
 #define BT_CHANGE_BG 1 //BG color changes depending on the BT status
-#define BT_CHANGE_DISC 2 //BG color changes depending on the BT status
-#define BT_CHANGE_MIN_HANDLE 3 //BG color changes depending on the BT status
-#define BT_ICON 4 //An icon shows the BT status
-#define BT_ICON_ONLY_DISC 5 //An icon shows the BT status only if it is disconnected
+#define BT_CHANGE_DISC_FILL 2 //The disc fill color changes depending on the BT status
+#define BT_CHANGE_DISC_STROKE 3 //The disc stroke color changes depending on the BT status
+#define BT_CHANGE_MIN_HANDLE_FILL 4 //The minute hand fill color changes depending on the BT status
+#define BT_CHANGE_MIN_HANDLE_STROKE 5 //The minute hand stroke color changes depending on the BT status
+#define BT_ICON 6 //An icon shows the BT status
+#define BT_ICON_ONLY_DISC 7 //An icon shows the BT status only if it is disconnected
+  
+#define BT_ICON_WIDTH 24
+#define BT_ICON_HEIGHT 32
 
 // Styles for aplite watches
 static const int ORIGINAL_COLORS = 0;
@@ -38,6 +49,7 @@ static const int CIRCLE_RADIUS = 68;
 #else
 static const int CIRCLE_RADIUS = 70;
 #endif
+
 
 // Hour text center positions
 static const struct GPoint ANALOG_BG_HOUR_POINTS[] = {
