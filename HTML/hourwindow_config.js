@@ -1,5 +1,6 @@
 var watch_version = -1;
 var COLOR_STRING_LENGTH = 54;
+var bluetooth_res = -1;
 
 //Function to convert hex format to a rgb color
 function rgb2hex(rgb){
@@ -12,21 +13,66 @@ function rgb2hex(rgb){
 
 $(function () {
   $('#bluetooth_signal').change(function() {
-        btSignal = parseInt($("input[name=bluetooth_signal]:checked").val(), 10);
+        bluetooth_res = parseInt($("input[name=bluetooth_signal]:checked").val(), 10);
+        $('#color_affects_aplite').addClass("hidden");
+        $('#color_affects_basalt').addClass("hidden");
+        $('#bt_color').addClass("hidden");
         if(watch_version >= 3) {
-            $('#bt_color').removeClass("hidden");
             $('#bg_color').removeClass("hidden");
-            $('#disk_color').removeClass("hidden");
-            $('#min_color').removeClass("hidden");
-            if(btSignal == 0) {
-                $('#bt_color').addClass("hidden");
-            } else if(btSignal == 1) {
-                $('#bg_color').addClass("hidden");
-            } else if(btSignal == 2) {
-                $('#disk_color').addClass("hidden");
-            } else if(btSignal == 3) {
-                $('#min_color').addClass("hidden");
+            $('#disk_fill_color').removeClass("hidden");
+            $('#disk_stroke_color').removeClass("hidden");
+            $('#min_fill_color').removeClass("hidden");
+            $('#min_stroke_color').removeClass("hidden");
+            if(bluetooth_res == 1) {
+                $('#bt_color').removeClass("hidden");
+                $('#color_affects_basalt').removeClass("hidden");
+                bluetooth_res = parseInt($("#color_affects_basalt_select").val(), 10);
+                if(bluetooth_res == 1) {
+                    $('#bg_color').addClass("hidden");
+                } else if(bluetooth_res == 2) {
+                    $('#disk_fill_color').addClass("hidden");
+                } else if(bluetooth_res == 3) {
+                    $('#disk_stroke_color').addClass("hidden");
+                } else if(bluetooth_res == 4) {
+                    $('#min_fill_color').addClass("hidden");
+                } else if(bluetooth_res == 5) {
+                    $('#min_stroke_color').addClass("hidden");
+                }
             }
+            
+        } else {
+            if(bluetooth_res == 1) {
+                $('#color_affects_aplite').removeClass("hidden");
+                bluetooth_res = parseInt($("#color_affects_aplite_select").val(), 10);
+            }
+        }
+  });
+});
+
+$(function () {
+  $('#color_affects_aplite_select').change(function() {
+      bluetooth_res = parseInt($("#color_affects_aplite_select").val(), 10);
+  });
+});
+
+$(function () {
+  $('#color_affects_basalt_select').change(function() {
+        bluetooth_res = parseInt($("#color_affects_basalt_select").val(), 10);
+        $('#bg_color').removeClass("hidden");
+        $('#disk_fill_color').removeClass("hidden");
+        $('#disk_stroke_color').removeClass("hidden");
+        $('#min_fill_color').removeClass("hidden");
+        $('#min_stroke_color').removeClass("hidden");
+        if(bluetooth_res == 1) {
+            $('#bg_color').addClass("hidden");
+        } else if(bluetooth_res == 2) {
+            $('#disk_fill_color').addClass("hidden");
+        } else if(bluetooth_res == 3) {
+            $('#disk_stroke_color').addClass("hidden");
+        } else if(bluetooth_res == 4) {
+            $('#min_fill_color').addClass("hidden");
+        } else if(bluetooth_res == 5) {
+            $('#min_stroke_color').addClass("hidden");
         }
   });
 });
@@ -187,7 +233,8 @@ function saveOptions() {
 
 	var options = {};
 	
-        options.KEY_BT_SIGNAL = parseInt($("input[name=bluetooth_signal]:checked").val(), 10);
+        options.KEY_BT_SIGNAL = bluetooth_res;
+        options.KEY_BT_VIBRATE = parseInt($("input[name=bluetooth_vibrate]:checked").val(), 10);
         if (watch_version < 3){
             options.KEY_THEME_APLITE = parseInt($("#theme_aplite_select").val(), 10);
             options.KEY_HOUR_COLOR_APLITE = parseInt($("input[name=hour_window_color_aplite]:checked").val(), 10);
@@ -216,10 +263,22 @@ function saveOptions() {
 
 $("document").ready(function() {
 	watch_version = getQueryParam("watch_version", 1);
+        console.log("ready - watch_version: "+watch_version);
         
-        var btSignal = getQueryParam("btSignal", 1);
-        btSignal = parseInt(isNumber(btSignal) && btSignal <= 5 ? btSignal : 1);
-        $('#bluetooth_signal_'+btSignal).prop( "checked", true ).checkboxradio("refresh");
+        var vibrate = getQueryParam("btVibrate", 2);
+        $('#bluetooth_vibrate_'+vibrate).prop( "checked", true ).checkboxradio("refresh");
+        
+        var bluetooth_res = getQueryParam("btSignal", 1);
+        bluetooth_res = parseInt(isNumber(bluetooth_res) && bluetooth_res <= 7 ? bluetooth_res : 1);
+        var btSignal = bluetooth_res;
+        if(bluetooth_res >= 1 && bluetooth_res <= 5) {
+            $('#bluetooth_signal_1').prop( "checked", true ).checkboxradio("refresh");
+            btSignal = 1;
+        } else {
+            $('#bluetooth_signal_'+bluetooth_res).prop( "checked", true ).checkboxradio("refresh");
+            $("#color_affects_basalt_select").val(1).selectmenu("refresh");
+            $("#color_affects_aplite_select").val(1).selectmenu("refresh");
+        }
 	
 	if (watch_version >= 3) {
             var minBatterySignal = getQueryParam("bgBT", 0);
@@ -239,27 +298,36 @@ $("document").ready(function() {
             $('#bt_con_color_color_box').css('background-color', "#"+basalt_colors.substring(42,48));
             $('#bt_dis_color_color_box').css('background-color', "#"+basalt_colors.substring(48,54));
             
-            if(btSignal != 0) {
-                $('#bt_color').removeClass("hidden");
-            }
-            
-            if(btSignal != 1) {
-                $('#bg_color').removeClass("hidden");
-            }
-            
             $('#text_color').removeClass("hidden");
-            
-            if(btSignal != 2) {
-                $('#disk_color').removeClass("hidden");
-            }
-            
             $('#hour_window_color').removeClass("hidden");
-            
-            if(btSignal != 3) {
-                $('#min_color').removeClass("hidden");
+            $('#bg_color').removeClass("hidden");
+            $('#disk_fill_color').removeClass("hidden");
+            $('#disk_stroke_color').removeClass("hidden");
+            $('#min_fill_color').removeClass("hidden");
+            $('#min_stroke_color').removeClass("hidden");
+            if(btSignal == 1) {
+                $("#color_affects_basalt_select").val(bluetooth_res).selectmenu("refresh");
+                $('#bt_color').removeClass("hidden");
+                $('#color_affects_basalt').removeClass("hidden");
+                if(bluetooth_res == 1) {
+                    $('#bg_color').addClass("hidden");
+                } else if(bluetooth_res == 2) {
+                    $('#disk_fill_color').addClass("hidden");
+                } else if(bluetooth_res == 3) {
+                    $('#disk_stroke_color').addClass("hidden");
+                } else if(bluetooth_res == 4) {
+                    $('#min_fill_color').addClass("hidden");
+                } else if(bluetooth_res == 5) {
+                    $('#min_stroke_color').addClass("hidden");
+                }
             }
             
 	} else {
+            if(btSignal == 1) {
+                $("#color_affects_aplite_select").val(bluetooth_res).selectmenu("refresh");
+                $('#color_affects_aplite').removeClass("hidden");
+            }
+            
             var min_color_aplite = getQueryParam("min_color_aplite", 1);
             min_color_aplite = parseInt(isNumber(min_color_aplite) && min_color_aplite <= 1 ? min_color_aplite : 1);
             $('#minute_hand_color_aplite').removeClass("hidden");
