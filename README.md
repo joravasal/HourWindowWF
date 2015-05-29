@@ -1,5 +1,7 @@
 # HourWindowWF
-A watchface for the Pebble watches that shows an analog clock with only the present hour shown and a minute hand.
+A minimalistic watchface for the Pebble watches that shows an analog clock with only the present hour shown and a minute hand.
+
+![](http://i.imgur.com/CvGN5eU.jpg?1) ![](http://i.imgur.com/mw5WY51.png)
 
 The original idea comes from [joeytitans](https://www.reddit.com/user/joeytitans) in Reddit where [he posted about the real wallclock](https://www.reddit.com/r/pebble/comments/350zoy/face_any_minimalist_faces_similar_to_this/) with this style.
 
