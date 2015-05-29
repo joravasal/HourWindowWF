@@ -7,7 +7,7 @@
             <link rel='stylesheet' href='jquery/mobile/jquery.mobile-1.4.5.min.css' />
             <script src='jquery/jquery-1.11.0.min.js'></script>
             <script src='jquery/mobile/jquery.mobile-1.4.5.min.js'></script>
-            <script src='hourwindow_config_1.1.js'></script>
+            <script src='hourwindow_config_test.js'></script>
             <style>
                 .ui-header .ui-title 
                 { 
@@ -48,22 +48,45 @@
             </div>
 
             <div id="settings" data-role="content">
+
+                <div id="bluetooth_vibrate" data-role="fieldcontain">
+                    <fieldset data-role="controlgroup" data-type="horizontal">
+                        <legend>BlueTooth status changed vibration notification</legend>
+                        <input id="bluetooth_vibrate_0" name="bluetooth_vibrate" value="0" type="radio">
+                        <label for="bluetooth_vibrate_0">OFF</label>
+                        <input id="bluetooth_vibrate_1" name="bluetooth_vibrate" value="1" type="radio">
+                        <label for="bluetooth_vibrate_1">ON</label>
+                        <input id="bluetooth_vibrate_2" name="bluetooth_vibrate" value="2" type="radio">
+                        <label for="bluetooth_vibrate_2">Only when it disconnects</label>
+                    </fieldset>
+                </div>
+                
                 <div id="bluetooth_signal" data-role="fieldcontain">
                     <fieldset data-role="controlgroup" data-type="horizontal">
                         <legend>Indicate BlueTooth status</legend>
                         <input id="bluetooth_signal_0" name="bluetooth_signal" value="0" type="radio">
                         <label for="bluetooth_signal_0">OFF</label>
                         <input id="bluetooth_signal_1" name="bluetooth_signal" value="1" type="radio">
-                        <label for="bluetooth_signal_1">ON (Background Color)</label>
-                        <input id="bluetooth_signal_2" name="bluetooth_signal" value="2" type="radio">
-                        <label for="bluetooth_signal_2">ON (Disc Color)</label>
-                        <input id="bluetooth_signal_3" name="bluetooth_signal" value="3" type="radio">
-                        <label for="bluetooth_signal_3">ON (Minute Hand Color)</label>
+                        <label for="bluetooth_signal_1">ON (Color change)</label>
+                        <input id="bluetooth_signal_6" name="bluetooth_signal" value="6" type="radio">
+                        <label for="bluetooth_signal_6">ON (Icon)</label>
+                        <input id="bluetooth_signal_7" name="bluetooth_signal" value="7" type="radio">
+                        <label for="bluetooth_signal_7">ON (Icon only if disconnected)</label>
                     </fieldset>
                 </div>
                 
 <!-- Settings for Basalt -->
                 
+                <div id="color_affects_basalt" data-role="fieldcontain" class="hidden">
+                    <label for="color_affects_basalt">BlueTooth color change affects: </label>
+                    <select name="color_affects_basalt_select" id="color_affects_basalt_select">
+                        <option value="1">Background</option>
+                        <option value="2">Disc fill</option>
+                        <option value="3">Disc stroke</option>
+                        <option value="4">Minute hand fill</option>
+                        <option value="5">Minute hand stroke</option>
+                    </select>
+                </div>
                 <div id="bt_color" data-role="fieldcontain" class="hidden">
                     <label for="background-color">BlueTooth Connected Color</label>
                     <a href="#color-picker" data-rel="popup" class="ui-btn ui-corner-all" data-position-to="window" id="bt_con_color_color_box" style="height: 5vw; background-color: #55FF55"></a>
@@ -81,9 +104,11 @@
                     <a href="#color-picker" data-rel="popup" class="ui-btn ui-corner-all" data-position-to="window" id="text_color_box" style="height: 5vw; background-color: #000000;"></a>
                 </div>
             
-                <div id="disk_color" data-role="fieldcontain" class="hidden">
+                <div id="disk_fill_color" data-role="fieldcontain" class="hidden">
                     <label for="background-color">Disk Color (Filling)</label>
                     <a href="#color-picker" data-rel="popup" class="ui-btn ui-corner-all" data-position-to="window" id="disk_fill_color_box" style="height: 5vw; background-color: #FFFFFF"></a>
+                </div>
+                <div id="disk_stroke_color" data-role="fieldcontain" class="hidden">
                     <label for="background-color">Disk Color (Stroke)</label>
                     <a href="#color-picker" data-rel="popup" class="ui-btn ui-corner-all" data-position-to="window" id="disk_stroke_color_box" style="height: 5vw; background-color: #FFFFFF"></a>
                 </div>
@@ -102,14 +127,24 @@
                         <label for="min_battery_signal_0">OFF</label>
                     </fieldset>
                 </div>
-                <div id="min_color" data-role="fieldcontain" class="hidden">
+                <div id="min_fill_color" data-role="fieldcontain" class="hidden">
                     <label for="background-color">Minute Hand Color (Filling)</label>
                     <a href="#color-picker" data-rel="popup" class="ui-btn ui-corner-all" data-position-to="window" id="min_fill_color_box" style="height: 5vw; background-color: #00AAFF;"></a>
+                </div>
+                <div id="min_stroke_color" data-role="fieldcontain" class="hidden">
                     <label for="background-color">Minute Hand Color (Stroke)</label>
                     <a href="#color-picker" data-rel="popup" class="ui-btn ui-corner-all" data-position-to="window" id="min_stroke_color_box" style="height: 5vw; background-color: #00AAFF;"></a>
                 </div>
                 
 <!-- Settings for Aplite -->
+                <div id="color_affects_aplite" data-role="fieldcontain" class="hidden">
+                    <label for="color_affects_aplite">BlueTooth color change affects: </label>
+                    <select name="color_affects_aplite_select" id="color_affects_aplite_select">
+                        <option value="1">Background</option>
+                        <option value="2">Disc</option>
+                        <option value="4">Minute hand</option>
+                    </select>
+                </div>
 
                 <div id="theme_aplite" data-role="fieldcontain" class="hidden">
                     <label for="theme_aplite_label">Theme</label>
