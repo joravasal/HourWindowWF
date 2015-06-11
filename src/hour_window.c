@@ -692,6 +692,8 @@ static void window_load(Window *window) {
     battery_color_scheme = persist_read_int_safe(KEY_BATTERY_COLOR_SCHEME, 3);
     memcpy(basalt_colors, "000000FFFFFF00550055AA00FFFFFFFFFFFFAAAAAA55AA00555500"+'\0', EDITABLE_COLORS_LENGTH);
 		persist_read_string(KEY_COLORS_BASALT, basalt_colors, EDITABLE_COLORS_LENGTH);
+  
+    apply_colors();
 	#else
     bluetooth_mode = persist_read_int_safe(KEY_BT_SIGNAL, BT_CHANGE_DISC_FILL);
     battery_mode = persist_read_int_safe(KEY_BATTERY_SIGNAL, BATT_NUMBER);
@@ -699,6 +701,7 @@ static void window_load(Window *window) {
 		int aplite_theme = persist_read_int_safe(KEY_THEME_APLITE, ORIGINAL_COLORS);
     int min_color_aplite = persist_read_int_safe(KEY_MIN_COLOR_APLITE, 1);
     int hour_color_aplite = persist_read_int_safe(KEY_HOUR_COLOR_APLITE, 1);
+    apply_colors(aplite_theme, min_color_aplite, hour_color_aplite);
 	#endif
   
   GRect bounds = window_get_bounds(window);
@@ -768,11 +771,11 @@ static void window_load(Window *window) {
   layer_set_update_proc(minute_hand_layer, update_minute_hand_proc);
   layer_add_to_window(minute_hand_layer, window);
   
-#ifdef PBL_COLOR
-  apply_colors();
-#else
+#ifdef PBL_BW
+  //Needed a second time to apply the right bitmap style to some items.
   apply_colors(aplite_theme, min_color_aplite, hour_color_aplite);
 #endif
+  window_set_background_color(window, bgColor);
   bt_handler(bluetooth_connection_service_peek());
   batt_handler(battery_state_service_peek());
 }
