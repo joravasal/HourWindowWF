@@ -3,9 +3,13 @@ var aplite_hour_color = 1;
 var aplite_min_color = 1;
 
 var basalt_colors = -1;
-var bt_signal = 0;
+
+var bt_signal = 2;
 var bt_vibrate = 2;
-var basalt_minBatterySignal = 0;
+
+var battery_mode = 1;
+var battery_below_level = 40;
+var battery_color_scheme = 3;
 
 function getItem(reference) {
 	var item = localStorage.getItem(reference);
@@ -18,10 +22,27 @@ function setItem(reference, item) {
 
 function loadLocalVariables() {
   bt_signal = parseInt(getItem("bt_signal"));
-  bt_signal = !bt_signal ? 1 : bt_signal;
+  var def_bt_signal = 2;
+  if(getWatchVersion() >= 3) {
+    def_bt_signal = 3;
+  }
+  bt_signal = !bt_signal ? def_bt_signal : bt_signal;
   
   bt_vibrate = parseInt(getItem("bt_vibrate"));
   bt_vibrate = !bt_vibrate ? 2 : bt_vibrate;
+  
+  battery_mode = parseInt(getItem("battery_mode"));
+  var def_batt_signal = 1;
+  if(getWatchVersion() >= 3) {
+    def_batt_signal = 6;
+  }
+  battery_mode = !battery_mode ? def_batt_signal : battery_mode;
+  
+  battery_below_level = parseInt(getItem("battery_below_level"));
+  battery_below_level = !battery_below_level ? 40 : battery_below_level;
+  
+  battery_color_scheme = parseInt(getItem("battery_color_scheme"));
+  battery_color_scheme = !battery_color_scheme ? 3 : battery_color_scheme;
   
 	aplite_theme = parseInt(getItem("theme_aplite"));
   aplite_hour_color = parseInt(getItem("hour_color_aplite"));
@@ -32,10 +53,7 @@ function loadLocalVariables() {
   aplite_min_color = !aplite_min_color ? 1 : aplite_min_color;
   
 	basalt_colors = getItem("basalt_colors");
-  basalt_minBatterySignal = parseInt(getItem("basalt_minBatterySignal"));
-  
-	basalt_colors = !basalt_colors ? "FFFFFF000000555555AAAAAAFFFFFFFF0000FF000055FF55FF5555" : basalt_colors;
-  basalt_minBatterySignal = !basalt_minBatterySignal ? 1 : basalt_minBatterySignal;
+	basalt_colors = !basalt_colors ? "000000FFFFFF00550055AA00FFFFFFFFFFFFAAAAAA55AA00555500" : basalt_colors;
 }
 
 Pebble.addEventListener("ready",
@@ -48,15 +66,16 @@ Pebble.addEventListener("ready",
 Pebble.addEventListener("showConfiguration",
   function(e) {
     //Load the remote config page
-    var url = 'https://dl.dropboxusercontent.com/u/3223915/Pebble_config_pages/hourwindow_config_test.html'+
-		'?watch_version=' + getWatchVersion() + '&btSignal=' + bt_signal + '&btVibrate=' + bt_vibrate;
+    var url = 'https://dl.dropboxusercontent.com/u/3223915/Pebble_config_pages/hourwindow_config_1.3.html' +
+        '?watch_version=' + getWatchVersion() + '&btSignal=' + bt_signal + '&btVibrate=' + bt_vibrate +
+        '&bat_mode=' + battery_mode + '&bat_below_level=' + battery_below_level;
     if (getWatchVersion() < 3) {
       url = url + '&theme_aplite=' + aplite_theme +
           '&hour_color_aplite=' + aplite_hour_color +
           '&min_color_aplite=' + aplite_min_color;
     } else {
-      url = url +	'&basalt_colors=' + basalt_colors +
-          '&basalt_minBatterySignal=' + basalt_minBatterySignal;
+      url = url  + '&bat_color_scheme=' + battery_color_scheme + 
+          '&basalt_colors=' + basalt_colors;
     }
 		
     Pebble.openURL(url);
@@ -78,6 +97,21 @@ Pebble.addEventListener("webviewclosed",
       bt_vibrate = configuration.KEY_BT_VIBRATE;
       setItem("bt_vibrate", bt_vibrate);
     }
+    
+    if(!isNaN(configuration.KEY_BATTERY_SIGNAL) && configuration.KEY_BATTERY_SIGNAL != battery_mode) {
+      battery_mode = configuration.KEY_BATTERY_SIGNAL;
+      setItem("battery_mode", battery_mode);
+    }
+    
+    if(!isNaN(configuration.KEY_BATTERY_BELOW_LEVEL) && configuration.KEY_BATTERY_BELOW_LEVEL != battery_below_level) {
+      battery_below_level = configuration.KEY_BATTERY_BELOW_LEVEL;
+      setItem("battery_below_level", battery_below_level);
+    }
+    
+    if(!isNaN(configuration.KEY_BATTERY_COLOR_SCHEME) && configuration.KEY_BATTERY_COLOR_SCHEME != battery_color_scheme) {
+      battery_color_scheme = configuration.KEY_BATTERY_COLOR_SCHEME;
+      setItem("battery_color_scheme", battery_color_scheme);
+    }
  
     if(!isNaN(configuration.KEY_THEME_APLITE) && configuration.KEY_THEME_APLITE != aplite_theme) {
       aplite_theme = configuration.KEY_THEME_APLITE;
@@ -95,10 +129,6 @@ Pebble.addEventListener("webviewclosed",
     if(configuration.KEY_COLORS_BASALT && configuration.KEY_COLORS_BASALT.length == 54 && configuration.KEY_COLORS_BASALT.localeCompare(basalt_colors) !== 0) {
       basalt_colors = configuration.KEY_COLORS_BASALT;
       setItem("basalt_colors", basalt_colors);
-    }
-    if(!isNaN(configuration.KEY_BATTERY_SIGNAL) && configuration.KEY_BATTERY_SIGNAL != basalt_minBatterySignal) {
-      basalt_minBatterySignal = configuration.KEY_BATTERY_SIGNAL;
-      setItem("basalt_minBatterySignal", basalt_minBatterySignal);
     }
     
     //Send to Pebble, persist there
@@ -125,18 +155,26 @@ function getWatchVersion() {
 
 	if(Pebble.getActiveWatchInfo) {
 		// Available for use!
-		var watch_name = Pebble.getActiveWatchInfo().model;
-
-		if (watch_name.indexOf("pebble_time_steel") >= 0) {
-			watch_version = 4;
-		} else if (watch_name.indexOf("pebble_time") >= 0) {
-			watch_version = 3;
-		} else if (watch_name.indexOf("qemu_platform_basalt") >= 0) {
-			watch_version = 3;
-		} else if (watch_name.indexOf("pebble_steel") >= 0) {
-			watch_version = 2;
-		}
-	}
+    try {
+      var watch = Pebble.getActiveWatchInfo();
+      var watch_name = watch.model;
+    
+      if (watch_name.indexOf("time_steel") >= 0) {
+        watch_version = 4;
+      } else if (watch_name.indexOf("time") >= 0) {
+        watch_version = 3;
+      } else if (watch_name.indexOf("qemu_basalt") >= 0) {
+        watch_version = 3;
+      } else if (watch_name.indexOf("steel") >= 0) {
+        watch_version = 2;
+      }
+    } catch(err) {
+      console.log("getActiveWatchInfo() FAILED!");
+      watch_version = 3;
+    }
+	} else {
+    console.log("getActiveWatchInfo is not available");
+  }
 	
 	return watch_version;
 }

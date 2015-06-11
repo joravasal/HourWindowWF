@@ -16,11 +16,19 @@ static GPath *window_path;
 static GPath *blocker_path;
 static GPoint center;
 
+//Bluetooth variables
 int bluetooth_vibrate = 2;
-int bluetooth_mode = 0;
+int bluetooth_mode = BT_CHANGE_DISC_STROKE;
+static GColor bluetoothDisconnectedColor;
+static GColor bluetoothConnectedColor;
+//Battery variables
+int battery_mode = BATT_NUMBER;
+int battery_below_level = 40;
+int battery_color_scheme = 3;
+
+//Colors variables
 #ifdef PBL_COLOR
   char basalt_colors[EDITABLE_COLORS_LENGTH];
-  int battery_mode = 0;
 #endif
 static GColor minuteHandFill;
 static GColor minuteHandStroke;
@@ -31,13 +39,14 @@ static GColor bgColor;
 static GColor textColor;
 static GColor windowFill;
 static GColor windowStroke;
-static GColor bluetoothDisconnectedColor;
-static GColor bluetoothConnectedColor;
 
 static GBitmap *bt_disc_bm;
 static GBitmap *bt_conn_bm;
 static BitmapLayer *bt_status_conn_layer;
 static BitmapLayer *bt_status_disc_layer;
+static TextLayer *batt_text_layer;
+static GBitmap *batt_charging_icon;
+static BitmapLayer *batt_charging_icon_layer;
 
 AppTimer *timer;
 const int timer_delay = 40;
@@ -54,6 +63,92 @@ void timer_callback(void *data) {
   layer_mark_dirty(blocker_layer);
 }
 
+#ifdef PBL_COLOR
+static GColor8 battery_color(BatteryChargeState charge) {
+  LOG("Selecting color for battery status");
+  GColor8 c;
+  if(battery_color_scheme % 2 == 0) { //dark colors
+    if(charge.is_charging) {
+      c = (GColor8)BATTERY_LEVEL_COLORS_DARK[10];
+    } else if (battery_color_scheme <= 1) {
+      int pos = 9;
+      if (charge.charge_percent <= 30) pos = 0;
+      else if (charge.charge_percent <= 60) pos = 5;
+      c = (GColor8)BATTERY_LEVEL_COLORS_DARK[pos];
+    } else {
+      int pos = charge.charge_percent / 10;
+      if (pos == 10) pos--;
+      c = (GColor8)BATTERY_LEVEL_COLORS_DARK[pos];
+    }
+  } else { //bright colors
+    if(charge.is_charging) {
+      c = (GColor8)BATTERY_LEVEL_COLORS_CLEAR[10];
+    } else if (battery_color_scheme <= 1) {
+      int pos = 9;
+      if (charge.charge_percent <= 30) pos = 0;
+      else if (charge.charge_percent <= 60) pos = 5;
+      c = (GColor8)BATTERY_LEVEL_COLORS_CLEAR[pos];
+    } else {
+      int pos = charge.charge_percent / 10;
+      if (pos == 10) pos--;
+      c = (GColor8)BATTERY_LEVEL_COLORS_CLEAR[pos];
+    }
+  }
+  return c;
+}
+#endif
+
+static void batt_handler(BatteryChargeState charge) {
+  LOG("Battery event handler, charge = %d%%", charge.charge_percent);
+  if(battery_mode != BATT_NUMBER || charge.charge_percent > battery_below_level) {
+    layer_hide(text_layer_get_layer(batt_text_layer));
+    layer_hide(batt_charging_icon_layer);
+  } else {
+    layer_show(text_layer_get_layer(batt_text_layer));
+    static char batt_test_buffer[] = "100%";
+    if(charge.is_charging){
+      snprintf(batt_test_buffer, sizeof("100%"), "%d", charge.charge_percent);
+      layer_set_frame(text_layer_get_layer(batt_text_layer), GRect(PEBBLE_WIDTH - BATT_TEXT_WIDTH - BATT_CHARGING_ICON_WIDTH - 2, 3, BATT_TEXT_WIDTH, BATT_TEXT_HEIGHT));
+      layer_show(batt_charging_icon_layer);
+    } else {
+      snprintf(batt_test_buffer, sizeof("100%"), "%d%%", charge.charge_percent);
+      layer_set_frame(text_layer_get_layer(batt_text_layer), GRect(PEBBLE_WIDTH - BATT_TEXT_WIDTH - 2, 3, BATT_TEXT_WIDTH, BATT_TEXT_HEIGHT));
+      layer_hide(batt_charging_icon_layer);
+    }
+    text_layer_set_text(batt_text_layer, batt_test_buffer);
+  }
+  
+  #ifdef PBL_COLOR
+  if (battery_mode >= BATT_CHANGE_DISC_FILL && battery_mode <= BATT_CHANGE_BG) {
+    GColor8 new_color = battery_color(charge);
+    switch(battery_mode) {
+      case BATT_CHANGE_BG:
+        bgColor = new_color;
+        windowFill = new_color;
+        window_set_background_color(window, bgColor);
+        layer_mark_dirty(background_layer);
+        break;
+      case BATT_CHANGE_DISC_FILL:
+        discFill = new_color;
+        layer_mark_dirty(background_layer);
+        break;
+      case BATT_CHANGE_DISC_STROKE:
+        discStroke = new_color;
+        layer_mark_dirty(background_layer);
+        break;
+      case BATT_CHANGE_MIN_HANDLE_FILL:
+        minuteHandFill = new_color;
+        layer_mark_dirty(minute_hand_layer);
+        break;
+      case BATT_CHANGE_MIN_HANDLE_SROKE:
+        minuteHandStroke = new_color;
+        layer_mark_dirty(minute_hand_layer);
+        break;
+    }
+  }
+  #endif
+}
+
 static void bt_handler(bool connected) {
   LOG("BlueTooth service changed, connected: %d", connected);
   DEBUG("BlueTooth mode: %d", bluetooth_mode);
@@ -67,6 +162,14 @@ static void bt_handler(bool connected) {
         bgColor = bluetoothConnectedColor;
         #ifdef PBL_COLOR
           windowFill = bluetoothConnectedColor;
+        #else
+          if (gcolor_equal(bgColor, GColorWhite)) {
+            text_layer_set_text_color(batt_text_layer, GColorBlack);
+            bitmap_layer_set_compositing_mode(batt_charging_icon_layer, GCompOpAssignInverted);
+          } else {
+            text_layer_set_text_color(batt_text_layer, GColorWhite);
+            bitmap_layer_set_compositing_mode(batt_charging_icon_layer, GCompOpAssign);
+          }
         #endif
         window_set_background_color(window, bgColor);
         layer_mark_dirty(background_layer);
@@ -118,6 +221,14 @@ static void bt_handler(bool connected) {
         bgColor = bluetoothDisconnectedColor;
         #ifdef PBL_COLOR
           windowFill = bluetoothDisconnectedColor;
+        #else
+          if (gcolor_equal(bgColor, GColorWhite)) {
+            text_layer_set_text_color(batt_text_layer, GColorBlack);
+            bitmap_layer_set_compositing_mode(batt_charging_icon_layer, GCompOpAssignInverted);
+          } else {
+            text_layer_set_text_color(batt_text_layer, GColorWhite);
+            bitmap_layer_set_compositing_mode(batt_charging_icon_layer, GCompOpAssign);
+          }
         #endif
         window_set_background_color(window, bgColor);
         layer_mark_dirty(background_layer);
@@ -189,16 +300,10 @@ static void update_window_proc(Layer *layer, GContext *ctx) {
   layer_set_frame(text_layer_get_layer(last_hour_text_layer), GRect(auxPoint.x - (TEXT_WIDTH / 2), auxPoint.y - (TEXT_HEIGHT / 2) + TEXT_Y_OFFSET, TEXT_WIDTH, TEXT_HEIGHT));  
   
   //Upate background
+  graphics_context_set_fill_color(ctx, discStroke);
+  graphics_fill_circle(ctx, center, CIRCLE_OUTER_RADIUS);
   graphics_context_set_fill_color(ctx, discFill);
-  graphics_context_set_stroke_color(ctx, discStroke);
-  #ifdef PBL_COLOR
-    graphics_context_set_stroke_width(ctx, 2);
-  #endif
-  graphics_fill_circle(ctx, center, CIRCLE_RADIUS);
-  graphics_draw_circle(ctx, center, CIRCLE_RADIUS);
-  #ifdef PBL_COLOR
-    graphics_context_set_stroke_width(ctx, 1);
-  #endif
+  graphics_fill_circle(ctx, center, CIRCLE_INNER_RADIUS);
   
   current_angle = 30 * ((hour) % 12);
   
@@ -312,7 +417,7 @@ static void update_minute_hand_proc(Layer *layer, GContext *ctx) {
     windowFill = GColorFromHEX(colorInts[0]);
     
   }
-#else
+#else //aplite
   static void apply_colors(int theme, int min_color, int hour_color) {
     LOG("Applying change in colors (OG)");
     if(min_color == 0) { // Black
@@ -347,6 +452,8 @@ static void update_minute_hand_proc(Layer *layer, GContext *ctx) {
       discFill = GColorBlack;
       discStroke = GColorBlack;
       bgColor = GColorWhite;
+      text_layer_set_text_color(batt_text_layer, GColorBlack);
+      bitmap_layer_set_compositing_mode(batt_charging_icon_layer, GCompOpAssignInverted);
       if (bluetooth_mode == BT_CHANGE_BG) {
         discStroke = GColorWhite;
         bluetoothConnectedColor = GColorWhite;
@@ -363,6 +470,8 @@ static void update_minute_hand_proc(Layer *layer, GContext *ctx) {
       discFill = GColorWhite;
       discStroke = GColorWhite;
       bgColor = GColorBlack;
+      text_layer_set_text_color(batt_text_layer, GColorWhite);
+      bitmap_layer_set_compositing_mode(batt_charging_icon_layer, GCompOpAssign);
       if (bluetooth_mode == BT_CHANGE_BG) {
         discStroke = GColorBlack;
         bluetoothConnectedColor = GColorBlack;
@@ -379,6 +488,8 @@ static void update_minute_hand_proc(Layer *layer, GContext *ctx) {
       discFill = GColorBlack;
       discStroke = GColorWhite;
       bgColor = GColorBlack;
+      text_layer_set_text_color(batt_text_layer, GColorWhite);
+      bitmap_layer_set_compositing_mode(batt_charging_icon_layer, GCompOpAssign);
       if (bluetooth_mode == BT_CHANGE_BG) {
         bluetoothConnectedColor = GColorBlack;
         bluetoothDisconnectedColor = GColorWhite;
@@ -393,6 +504,8 @@ static void update_minute_hand_proc(Layer *layer, GContext *ctx) {
       discFill = GColorWhite;
       discStroke = GColorBlack;
       bgColor = GColorWhite;
+      text_layer_set_text_color(batt_text_layer, GColorBlack);
+      bitmap_layer_set_compositing_mode(batt_charging_icon_layer, GCompOpAssignInverted);
       if (bluetooth_mode == BT_CHANGE_BG) {
         bluetoothConnectedColor = GColorWhite;
         bluetoothDisconnectedColor = GColorBlack;
@@ -407,6 +520,8 @@ static void update_minute_hand_proc(Layer *layer, GContext *ctx) {
       discFill = GColorBlack;
       discStroke = GColorBlack;
       bgColor = GColorBlack;
+      text_layer_set_text_color(batt_text_layer, GColorWhite);
+      bitmap_layer_set_compositing_mode(batt_charging_icon_layer, GCompOpAssign);
       if (bluetooth_mode == BT_CHANGE_BG) {
         bluetoothConnectedColor = GColorBlack;
         bluetoothDisconnectedColor = GColorWhite;
@@ -421,6 +536,8 @@ static void update_minute_hand_proc(Layer *layer, GContext *ctx) {
       discFill = GColorWhite;
       discStroke = GColorWhite;
       bgColor = GColorWhite;
+      text_layer_set_text_color(batt_text_layer, GColorBlack);
+      bitmap_layer_set_compositing_mode(batt_charging_icon_layer, GCompOpAssignInverted);
       if (bluetooth_mode == BT_CHANGE_BG) {
         bluetoothConnectedColor = GColorWhite;
         bluetoothDisconnectedColor = GColorBlack;
@@ -440,7 +557,10 @@ static void in_recv_handler(DictionaryIterator *iterator, void *context) {
   Tuple *t = dict_read_first(iterator);
   int new_bt_mode = -1;
   int new_bt_vibrate = -1;
+  int new_batt_mode = -1;
+  int new_batt_below_lvl = -1;
   #ifdef PBL_COLOR
+    int new_batt_color = -1;
     char new_colors[EDITABLE_COLORS_LENGTH];
   #else
     int new_theme = -1;
@@ -466,8 +586,35 @@ static void in_recv_handler(DictionaryIterator *iterator, void *context) {
         persist_write_int(KEY_BT_SIGNAL, new_bt_mode);
       }
       break;
+    
+    case KEY_BATTERY_SIGNAL:
+      new_batt_mode = t->value->int16;
+      if(new_batt_mode > -1 && new_batt_mode <= 8 &&
+          (new_batt_mode != battery_mode || !persist_exists(KEY_BATTERY_SIGNAL))) {
+        battery_mode = new_batt_mode;
+        persist_write_int(KEY_BATTERY_SIGNAL, new_batt_mode);
+      }
+      break;
+    
+    case KEY_BATTERY_BELOW_LEVEL:
+      new_batt_below_lvl = t->value->int16;
+      if(new_batt_below_lvl > -1 && new_batt_below_lvl <= 100 &&
+          (new_batt_below_lvl != battery_below_level || !persist_exists(KEY_BATTERY_BELOW_LEVEL))) {
+        battery_below_level = new_batt_below_lvl;
+        persist_write_int(KEY_BATTERY_BELOW_LEVEL, new_batt_below_lvl);
+      }
+      break;
       
     #ifdef PBL_COLOR
+    case KEY_BATTERY_COLOR_SCHEME:
+      new_batt_color = t->value->int16;
+      if(new_batt_color > -1 && new_batt_color <= 3 &&
+          (new_batt_color != battery_color_scheme || !persist_exists(KEY_BATTERY_COLOR_SCHEME))) {
+        battery_color_scheme = new_batt_color;
+        persist_write_int(KEY_BATTERY_COLOR_SCHEME, new_batt_color);
+      }
+      break;
+    
     case KEY_COLORS_BASALT:
       if (persist_exists(KEY_COLORS_BASALT)) {
         memcpy(new_colors, t->value->cstring, t->length);
@@ -479,9 +626,6 @@ static void in_recv_handler(DictionaryIterator *iterator, void *context) {
         memcpy(basalt_colors, t->value->cstring, t->length);
         persist_write_string(KEY_COLORS_BASALT, basalt_colors);
       }
-      break;
-    case KEY_BATTERY_SIGNAL:
-      persist_write_int(KEY_BATTERY_SIGNAL, t->value->int16);
       break;
       
     #else
@@ -522,29 +666,41 @@ static void in_recv_handler(DictionaryIterator *iterator, void *context) {
   
   text_layer_set_text_color(last_hour_text_layer, textColor);
   text_layer_set_text_color(hour_text_layer, textColor);
+#ifdef PBL_COLOR // in aplite the text color might be the same as the background
+  //so we change the battery text together with the background to make sure it is ok
+  text_layer_set_text_color(batt_text_layer, textColor);
+#endif
   window_set_background_color(window, bgColor);
   bt_handler(bluetooth_connection_service_peek());
+  batt_handler(battery_state_service_peek());
   layer_mark_dirty(minute_hand_layer);
   layer_mark_dirty(background_layer);
   layer_mark_dirty(blocker_layer);
 }
 
 static void window_load(Window *window) {
+  //Restore local data saved
   LOG("Window loading");
   bluetooth_vibrate = persist_read_int_safe(KEY_BT_VIBRATE, BT_VIBRATE_ON_DISC);
-  bluetooth_mode = persist_read_int_safe(KEY_BT_SIGNAL, BT_CHANGE_BG);
+  
+  battery_below_level = persist_read_int_safe(KEY_BATTERY_BELOW_LEVEL, 40);
+  
   #ifdef PBL_COLOR
-    memcpy(basalt_colors, "FFFFFF000000555555AAAAAAFFFFFFFF0000FF000055FF55FF5555"+'\0', EDITABLE_COLORS_LENGTH);
+    bluetooth_mode = persist_read_int_safe(KEY_BT_SIGNAL, BT_CHANGE_DISC_STROKE);
+    battery_mode = persist_read_int_safe(KEY_BATTERY_SIGNAL, BATT_CHANGE_MIN_HANDLE_FILL);
+  
+    battery_color_scheme = persist_read_int_safe(KEY_BATTERY_COLOR_SCHEME, 3);
+    memcpy(basalt_colors, "000000FFFFFF00550055AA00FFFFFFFFFFFFAAAAAA55AA00555500"+'\0', EDITABLE_COLORS_LENGTH);
 		persist_read_string(KEY_COLORS_BASALT, basalt_colors, EDITABLE_COLORS_LENGTH);
-    apply_colors();
 	#else
+    bluetooth_mode = persist_read_int_safe(KEY_BT_SIGNAL, BT_CHANGE_DISC_FILL);
+    battery_mode = persist_read_int_safe(KEY_BATTERY_SIGNAL, BATT_NUMBER);
+  
 		int aplite_theme = persist_read_int_safe(KEY_THEME_APLITE, ORIGINAL_COLORS);
     int min_color_aplite = persist_read_int_safe(KEY_MIN_COLOR_APLITE, 1);
     int hour_color_aplite = persist_read_int_safe(KEY_HOUR_COLOR_APLITE, 1);
-    apply_colors(aplite_theme, min_color_aplite, hour_color_aplite);
 	#endif
   
-  window_set_background_color(window, bgColor);
   GRect bounds = window_get_bounds(window);
   center = grect_center_point(&bounds);
   
@@ -556,6 +712,22 @@ static void window_load(Window *window) {
   layer_set_update_proc(background_layer, update_window_proc);
   layer_add_to_window(background_layer, window);
   
+  //Setup Battery text layer and charging icon
+  batt_text_layer = text_layer_create(GRect(PEBBLE_WIDTH - BATT_TEXT_WIDTH - 2, 3, BATT_TEXT_WIDTH, BATT_TEXT_HEIGHT));
+  text_layer_set_system_font(batt_text_layer, FONT_KEY_GOTHIC_18);
+  text_layer_set_colors(batt_text_layer, textColor, GColorClear);
+  text_layer_set_text_alignment(batt_text_layer, GTextAlignmentRight);
+  text_layer_add_to_window(batt_text_layer, window);
+  batt_charging_icon = gbitmap_create_with_resource(RESOURCE_ID_BATTERY_CHARGING_ICON);
+  batt_charging_icon_layer = bitmap_layer_create(GRect(PEBBLE_WIDTH - BATT_CHARGING_ICON_WIDTH -1, 8, BATT_CHARGING_ICON_WIDTH, BATT_CHARGING_ICON_HEIGHT));
+#ifdef PBL_COLOR
+  bitmap_layer_set_transparent(batt_charging_icon_layer);
+#endif
+  bitmap_layer_set_bitmap(batt_charging_icon_layer, batt_charging_icon);
+  bitmap_layer_add_to_layer(batt_charging_icon_layer, background_layer);
+  layer_hide(batt_charging_icon_layer);
+  
+  //Setup Bluetooth icons and layers
   bt_disc_bm = gbitmap_create_with_resource(RESOURCE_ID_BLUETOOTH_DISCONNECTED_ICON);
   bt_conn_bm = gbitmap_create_with_resource(RESOURCE_ID_BLUETOOTH_CONNECTED_ICON);
   bt_status_conn_layer = bitmap_layer_create(GRect(2, 2, BT_ICON_WIDTH, BT_ICON_HEIGHT));
@@ -571,28 +743,38 @@ static void window_load(Window *window) {
   layer_hide(bt_status_disc_layer);
   layer_hide(bt_status_conn_layer);
   
+  //Hour text set up
   hour_text_layer = text_layer_create(GRect(0, 0, TEXT_WIDTH, TEXT_HEIGHT));
   text_layer_set_colors(hour_text_layer, textColor, GColorClear);
   text_layer_set_text_alignment(hour_text_layer, GTextAlignmentCenter);
-  text_layer_set_system_font(hour_text_layer, FONT_KEY_GOTHIC_18);
+  text_layer_set_system_font(hour_text_layer, FONT_KEY_GOTHIC_18_BOLD);
   
+  //Previous hour text (helps with the animations)
   last_hour_text_layer = text_layer_create(GRect(0, 0, TEXT_WIDTH, TEXT_HEIGHT));
   text_layer_set_colors(last_hour_text_layer, textColor, GColorClear);
   text_layer_set_text_alignment(last_hour_text_layer, GTextAlignmentCenter);
-  text_layer_set_system_font(last_hour_text_layer, FONT_KEY_GOTHIC_18);
+  text_layer_set_system_font(last_hour_text_layer, FONT_KEY_GOTHIC_18_BOLD);
   
   text_layer_add_to_window(hour_text_layer, window);
   text_layer_add_to_window(last_hour_text_layer, window);
   
+  //Hiding the surrounding area to the hour, so the other text is hidden (helps with animations as well)
   blocker_layer = layer_create(bounds);
   layer_set_update_proc(blocker_layer, update_blockers_proc);
   layer_add_to_window(blocker_layer, window);
   
+  //Setup the minute hand layer
   minute_hand_layer = layer_create(bounds);
   layer_set_update_proc(minute_hand_layer, update_minute_hand_proc);
   layer_add_to_window(minute_hand_layer, window);
   
+#ifdef PBL_COLOR
+  apply_colors();
+#else
+  apply_colors(aplite_theme, min_color_aplite, hour_color_aplite);
+#endif
   bt_handler(bluetooth_connection_service_peek());
+  batt_handler(battery_state_service_peek());
 }
 
 static void window_unload(Window *window) {
@@ -603,9 +785,12 @@ static void window_unload(Window *window) {
   
   bitmap_layer_destroy_safe(bt_status_conn_layer);
   bitmap_layer_destroy_safe(bt_status_disc_layer);
+  bitmap_layer_destroy_safe(batt_charging_icon_layer);
   gbitmap_destroy_safe(bt_disc_bm);
   gbitmap_destroy_safe(bt_conn_bm);
+  gbitmap_destroy_safe(batt_charging_icon);
   
+  text_layer_destroy_safe(batt_text_layer);
   text_layer_destroy_safe(hour_text_layer);
   text_layer_destroy_safe(last_hour_text_layer);
 }
@@ -642,6 +827,8 @@ void handle_init(void) {
   
   // Bluetooth subscription
   bluetooth_connection_service_subscribe(bt_handler);
+  //Battery status subscription
+  battery_state_service_subscribe(batt_handler);
   
   // Show the Window on the watch, with animated=true
   window_stack_push(window, true);
@@ -652,6 +839,9 @@ void handle_init(void) {
 
 void handle_deinit(void) {
   LOG("DEINIT");
+  battery_state_service_unsubscribe();
+  bluetooth_connection_service_unsubscribe();
+  
   window_destroy_safe(window);
   gpath_destroy_safe(minute_arrow);
   gpath_destroy_safe(window_path);

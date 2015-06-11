@@ -1,5 +1,7 @@
 {
     "appKeys": {
+        "KEY_BATTERY_BELOW_LEVEL": 7,
+        "KEY_BATTERY_COLOR_SCHEME": 8,
         "KEY_BATTERY_SIGNAL": 5,
         "KEY_BT_SIGNAL": 4,
         "KEY_BT_VIBRATE": 6,
@@ -16,6 +18,11 @@
     "projectType": "native",
     "resources": {
         "media": [
+            {
+                "file": "images/batt_charg.png",
+                "name": "BATTERY_CHARGING_ICON",
+                "type": "png"
+            },
             {
                 "file": "images/bt_disc.png",
                 "name": "BLUETOOTH_DISCONNECTED_ICON",
