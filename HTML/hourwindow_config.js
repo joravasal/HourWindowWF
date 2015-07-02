@@ -12,6 +12,17 @@ function rgb2hex(rgb){
 }
 
 $(function () {
+  $('#show_date').change(function() {
+        var show_date = parseInt($("input[name=show_date]:checked").val(), 10);
+        if(show_date == 0) {
+            $('#date_format').addClass("hidden");
+        } else {
+            $('#date_format').removeClass("hidden");
+        }
+  });
+});
+
+$(function () {
   $('#bluetooth_signal').change(function() {
         bluetooth_res = parseInt($("input[name=bluetooth_signal]:checked").val(), 10);
         $('#color_affects_aplite').addClass("hidden");
@@ -283,6 +294,11 @@ function saveOptions() {
 
 	var options = {};
 	
+        options.KEY_SHOW_MINUTE_MARKS = parseInt($("input[name=show_minute_marks]:checked").val(), 10);
+        options.KEY_SHOW_DATE = parseInt($("input[name=show_date]:checked").val(), 10);
+        options.KEY_DATE_FORMAT = $("#date_format_input").val();
+        options.KEY_DATE_POS = parseInt($("input[name=date_pos]:checked").val(), 10);
+        
         options.KEY_BT_SIGNAL = bluetooth_res;
         options.KEY_BT_VIBRATE = parseInt($("input[name=bluetooth_vibrate]:checked").val(), 10);
         if (watch_version < 3){
@@ -326,6 +342,21 @@ $("document").ready(function() {
         var vibrate = getQueryParam("btVibrate", 2);
         $('#bluetooth_vibrate_'+vibrate).prop( "checked", true ).checkboxradio("refresh");
         
+        var show_minute_marks = getQueryParam("show_min_marks", -1);
+        if(show_minute_marks < 0) show_minute_marks = 0; //solves a problem getQueryParam has with default value 0
+        $('#show_minute_marks_'+show_minute_marks).prop( "checked", true ).checkboxradio("refresh");
+        
+        var show_date = getQueryParam("show_date", -1);
+        if(show_date < 0) show_date = 0; //solves a problem getQueryParam has with default value 0
+        $('#show_date_'+show_date).prop( "checked", true ).checkboxradio("refresh");
+        var date_format = getQueryParam("date_format", "d, D.m (W), Y");
+        $('#date_format_input').val(date_format);
+        if(show_date == 1) {
+            $('#date_format').removeClass("hidden");
+        }
+        var date_pos = getQueryParam("date_pos", 1);
+        $('#date_pos_'+date_pos).prop( "checked", true ).checkboxradio("refresh");
+        
         var def_bt_mode = 2;
         if(watch_version >= 3) def_bt_mode = 3;
         bluetooth_res = getQueryParam("btSignal", def_bt_mode);
@@ -346,13 +377,13 @@ $("document").ready(function() {
         batt_mode = parseInt(isNumber(batt_mode) && batt_mode >= 0 && batt_mode <= 8 ? batt_mode : def_batt_mode);
         var batt_below_lvl = getQueryParam("bat_below_level", 40);
         batt_below_lvl = parseInt(isNumber(batt_below_lvl) && batt_below_lvl >= 0 && batt_below_lvl <= 100 ? batt_below_lvl : 40);
+        $('#battery_show_after_level_input').val(batt_below_lvl);
         var batt_color = getQueryParam("bat_color_scheme", 3);
         batt_color = parseInt(isNumber(batt_color) && batt_color >= 0 && batt_color <= 3 ? batt_color : 3);
+        $('#battery_color_select').val(batt_color).selectmenu("refresh");
         if(batt_mode == 1) {
-            $('#battery_show_after_level_input').val(batt_below_lvl);
             $('#battery_show_after_level').removeClass("hidden");
         } else if(batt_mode >= 4) {
-            $('#battery_color_select').val(batt_color).selectmenu("refresh");
             $('#battery_color_type').removeClass("hidden");
         }
 	
