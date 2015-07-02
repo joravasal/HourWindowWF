@@ -11,6 +11,12 @@ var battery_mode = 1;
 var battery_below_level = 40;
 var battery_color_scheme = 3;
 
+var show_minute_marks = 0;
+
+var show_date = 0;
+var date_pos = 1;
+var date_format = "d, D.m (W), Y";
+
 function getItem(reference) {
 	var item = localStorage.getItem(reference);
 	return item;
@@ -21,6 +27,16 @@ function setItem(reference, item) {
 }
 
 function loadLocalVariables() {
+  show_minute_marks = parseInt(getItem("show_minute_marks"));
+  show_minute_marks = !show_minute_marks ? 0 : show_minute_marks;
+  
+  show_date = parseInt(getItem("show_date"));
+  show_date = !show_date ? 0 : show_date;
+  date_pos = parseInt(getItem("date_pos"));
+  date_pos = !date_pos ? 1 : date_pos;
+  date_format = getItem("date_format");
+	date_format = !date_format ? "d, D.m (W), Y" : date_format;
+  
   bt_signal = parseInt(getItem("bt_signal"));
   var def_bt_signal = 2;
   if(getWatchVersion() >= 3) {
@@ -66,9 +82,11 @@ Pebble.addEventListener("ready",
 Pebble.addEventListener("showConfiguration",
   function(e) {
     //Load the remote config page
-    var url = 'https://dl.dropboxusercontent.com/u/3223915/Pebble_config_pages/hourwindow_config_1.3.html' +
+    var url = 'https://dl.dropboxusercontent.com/u/3223915/Pebble_config_pages/hourwindow_config_1.4.html' +
         '?watch_version=' + getWatchVersion() + '&btSignal=' + bt_signal + '&btVibrate=' + bt_vibrate +
-        '&bat_mode=' + battery_mode + '&bat_below_level=' + battery_below_level;
+        '&bat_mode=' + battery_mode + '&bat_below_level=' + battery_below_level +
+        '&show_min_marks=' + show_minute_marks + '&show_date=' + show_date +
+        '&date_pos=' + date_pos + '&date_format=' + date_format;
     if (getWatchVersion() < 3) {
       url = url + '&theme_aplite=' + aplite_theme +
           '&hour_color_aplite=' + aplite_hour_color +
@@ -87,6 +105,26 @@ Pebble.addEventListener("webviewclosed",
     //Get JSON dictionary
     var configuration = JSON.parse(decodeURIComponent(e.response));
     console.log("Configuration window returned: " + JSON.stringify(configuration));
+    
+    if(!isNaN(configuration.KEY_SHOW_MINUTE_MARKS) && configuration.KEY_SHOW_MINUTE_MARKS != show_minute_marks) {
+      show_minute_marks = configuration.KEY_SHOW_MINUTE_MARKS;
+      setItem("show_minute_marks", show_minute_marks);
+    }
+    
+    if(!isNaN(configuration.KEY_SHOW_DATE) && configuration.KEY_SHOW_DATE != show_date) {
+      show_date = configuration.KEY_SHOW_DATE;
+      setItem("show_date", show_date);
+    }
+    
+    if(!isNaN(configuration.KEY_DATE_POS) && configuration.KEY_DATE_POS != date_pos) {
+      date_pos = configuration.KEY_DATE_POS;
+      setItem("date_pos", date_pos);
+    }
+    
+    if(!isNaN(configuration.KEY_DATE_FORMAT) && configuration.KEY_DATE_FORMAT != date_format) {
+      date_format = configuration.KEY_DATE_FORMAT;
+      setItem("date_format", date_format);
+    }
     
     if(!isNaN(configuration.KEY_BT_SIGNAL) && configuration.KEY_BT_SIGNAL != bt_signal) {
       bt_signal = configuration.KEY_BT_SIGNAL;

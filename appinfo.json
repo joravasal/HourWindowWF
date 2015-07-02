@@ -6,8 +6,12 @@
         "KEY_BT_SIGNAL": 4,
         "KEY_BT_VIBRATE": 6,
         "KEY_COLORS_BASALT": 3,
+        "KEY_DATE_FORMAT": 11,
+        "KEY_DATE_POS": 12,
         "KEY_HOUR_COLOR_APLITE": 2,
         "KEY_MIN_COLOR_APLITE": 1,
+        "KEY_SHOW_DATE": 9,
+        "KEY_SHOW_MINUTE_MARKS": 10,
         "KEY_THEME_APLITE": 0
     },
     "capabilities": [
@@ -48,7 +52,7 @@
         "basalt"
     ],
     "uuid": "17041e6a-322c-46ad-8389-f087972dc710",
-    "versionLabel": "1.3",
+    "versionLabel": "1.4",
     "watchapp": {
         "watchface": true
     }

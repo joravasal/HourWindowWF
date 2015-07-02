@@ -11,7 +11,17 @@
 #define KEY_BT_VIBRATE 6
 #define KEY_BATTERY_BELOW_LEVEL 7
 #define KEY_BATTERY_COLOR_SCHEME 8
+#define KEY_SHOW_DATE 9
+#define KEY_SHOW_MINUTE_MARKS 10
+#define KEY_DATE_FORMAT 11
+#define KEY_DATE_POS 12
 
+// Default duration of tap_timer
+#define TAP_TIMER_LENGTH_DEF 5000
+  
+// Max. length of the date format string
+#define DATE_FORMAT_MAX_LENGTH 16
+  
 // Each color has a length of 6 plus the ending char
 #define EDITABLE_COLORS_LENGTH 55
 
