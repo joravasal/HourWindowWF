@@ -7,7 +7,7 @@
             <link rel='stylesheet' href='jquery/mobile/jquery.mobile-1.4.5.min.css' />
             <script src='jquery/jquery-1.11.0.min.js'></script>
             <script src='jquery/mobile/jquery.mobile-1.4.5.min.js'></script>
-            <script src='hourwindow_config_1.3.js'></script>
+            <script src='hourwindow_config_1.4.js'></script>
             <style>
                 .ui-header .ui-title 
                 { 
@@ -48,6 +48,74 @@
             </div>
 
             <div id="settings" data-role="content">
+                
+                <div id="show_minute_marks" data-role="fieldcontain">
+                    <fieldset data-role="controlgroup" data-type="horizontal">
+                        <legend>Show marks for the minutes:</legend>
+                        <input id="show_minute_marks_0" name="show_minute_marks" value="0" type="radio">
+                        <label for="show_minute_marks_0">Hidden</label>
+                        <input id="show_minute_marks_1" name="show_minute_marks" value="1" type="radio">
+                        <label for="show_minute_marks_1">Visible</label>
+                    </fieldset>
+                </div>
+                
+                <div id="show_date" data-role="fieldcontain">
+                    <fieldset data-role="controlgroup" data-type="horizontal">
+                        <legend>Show date:</legend>
+                        <input id="show_date_0" name="show_date" value="0" type="radio">
+                        <label for="show_date_0">Hidden</label>
+                        <input id="show_date_1" name="show_date" value="1" type="radio">
+                        <label for="show_date_1">Visible</label>
+                    </fieldset>
+                </div>
+                
+                <div id="date_format" data-role="fieldcontain" class="hidden">
+                    <p>With the next option you can decide what information of the date you prefer to show.
+                    Some characters are reserved for the data of the date, but otherwise any other symbol
+                    or character supported by Pebble can be shown as you write it. </br>
+                    The reserved characters are:
+                    <ul><li>
+                    d - Abbreviated weekday name, e.g. "Thu"
+                    </li>
+                    <li>
+                    D - Day of the month, e.g. "23"
+                    </li>
+                    <li>
+                    m - Abbreviated month name, e.g. "Aug"
+                    </li>
+                    <li>
+                    M - Month as a decimal number, e.g. "08"
+                    </li>
+                    <li>
+                    y - Year, last two digits, e.g. "01"
+                    </li>
+                    <li>
+                    Y - Year, e.g. "2001"
+                    </li>
+                    <li>
+                    W - Week number, e.g. "34"
+                    </li></ul>
+                    </br>
+                    For example, the text "d, D.m (W), Y" will produce "Thu, 23.Aug (34), 2001". You shouldn't
+                    make it much longer or it may be cut off in the watch.
+                    </p>
+                    
+                    <label for="date_format">Date format: </label>
+                    <input id="date_format_input" type="text" size="15" maxlength="15" align="middle" value="0">
+                </div>
+                
+                <div id="date_pos" data-role="fieldcontain">
+                    <fieldset data-role="controlgroup" data-type="horizontal">
+                        <legend>The date goes on the:</legend>
+                        <input id="date_pos_0" name="date_pos" value="0" type="radio">
+                        <label for="date_pos_0">Top</label>
+                        <input id="date_pos_1" name="date_pos" value="1" type="radio">
+                        <label for="date_pos_1">Bottom</label>
+                    </fieldset>
+                    
+                    <p>If the date is on top, the battery percentage and the bluetooth icon (if any is shown) will be on the bottom
+                    and viceversa.</p>
+                </div>
                 
                 <h2>Battery settings</h2>
                 <div id="battery_mode_basalt" data-role="fieldcontain" class="hidden">
