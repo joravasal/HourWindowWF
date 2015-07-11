@@ -49,6 +49,18 @@
 
             <div id="settings" data-role="content">
                 
+                <p> Choosing to always show the seconds will consume far more battery on the watch!
+                It is recommended that you show them only by a shake of the wrist or keep them hidden completely. </p>
+                <div id="show_seconds" data-role="fieldcontain">
+                    <fieldset data-role="controlgroup" data-type="horizontal">
+                        <legend>Show seconds:</legend>
+                        <input id="show_seconds_0" name="show_seconds" value="0" type="radio">
+                        <label for="show_seconds_0">Hidden</label>
+                        <input id="show_seconds_1" name="show_seconds" value="1" type="radio">
+                        <label for="show_seconds_1">Visible</label>
+                    </fieldset>
+                </div>
+                
                 <div id="show_minute_marks" data-role="fieldcontain">
                     <fieldset data-role="controlgroup" data-type="horizontal">
                         <legend>Show marks for the minutes:</legend>
@@ -115,6 +127,30 @@
                     
                     <p>If the date is on top, the battery percentage and the bluetooth icon (if any is shown) will be on the bottom
                     and viceversa.</p>
+                </div>
+                
+                <p> In order to show the info by shaking the wrist, first they should be hidden. If they are already shown they obviously won't be affected.
+                </br>
+                This is a multi-choice field, you can select none, some or all of the options.</p>
+                <div id="tap_affects" data-role="fieldcontain">
+                    <fieldset data-role="controlgroup" data-type="horizontal">
+                        <legend>On wrist-shake show:</legend>
+                        <input id="tap_affects_0" name="tap_affects" value="0" type="checkbox">
+                        <label for="tap_affects_0">Seconds</label>
+                        <input id="tap_affects_1" name="tap_affects" value="1" type="checkbox">
+                        <label for="tap_affects_1">Minute marks</label>
+                        <input id="tap_affects_2" name="tap_affects" value="2" type="checkbox">
+                        <label for="tap_affects_2">Date</label>
+                        <input id="tap_affects_3" name="tap_affects" value="3" type="checkbox">
+                        <label for="tap_affects_3">BlueTooth icon</label>
+                        <input id="tap_affects_4" name="tap_affects" value="4" type="checkbox">
+                        <label for="tap_affects_4">Battery percentage</label>
+                    </fieldset>
+                </div>
+                
+                <div id="tap_duration" data-role="fieldcontain">
+                    <label for="tap_duration">How many seconds the wrist-shake shows the data (minimum, 0; maximum, 60):</label>
+                    <input id="tap_duration_input" type="text" size="2" maxlength="2" align="middle" value="5">
                 </div>
                 
                 <h2>Battery settings</h2>
