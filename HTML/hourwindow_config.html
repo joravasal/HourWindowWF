@@ -81,7 +81,7 @@
                     </fieldset>
                 </div>
                 
-                <div id="date_format" data-role="fieldcontain" class="hidden">
+                <div id="date_format" data-role="fieldcontain">
                     <p>With the next option you can decide what information of the date you prefer to show.
                     Some characters are reserved for the data of the date, but otherwise any other symbol
                     or character supported by Pebble can be shown as you write it. </br>
@@ -261,9 +261,9 @@
                     <a href="#color-picker" data-rel="popup" class="ui-btn ui-corner-all" data-position-to="window" id="bg_color_box" style="height: 5vw; background-color: #00AAFF;"></a>
                 </div>
                 
-                <div id="text_color" data-role="fieldcontain" class="hidden">
-                    <label for="background-color">Text Color</label>
-                    <a href="#color-picker" data-rel="popup" class="ui-btn ui-corner-all" data-position-to="window" id="text_color_box" style="height: 5vw; background-color: #000000;"></a>
+                <div id="bg_text_color" data-role="fieldcontain" class="hidden">
+                    <label for="background-color">Text Color (on the background: date and battery)</label>
+                    <a href="#color-picker" data-rel="popup" class="ui-btn ui-corner-all" data-position-to="window" id="bg_text_color_box" style="height: 5vw; background-color: #000000;"></a>
                 </div>
             
                 <div id="disk_fill_color" data-role="fieldcontain" class="hidden">
@@ -275,9 +275,19 @@
                     <a href="#color-picker" data-rel="popup" class="ui-btn ui-corner-all" data-position-to="window" id="disk_stroke_color_box" style="height: 5vw; background-color: #FFFFFF"></a>
                 </div>
                 
-                <div id="hour_window_color" data-role="fieldcontain" class="hidden">
-                    <label for="background-color">Hour Window Stroke Color</label>
-                    <a href="#color-picker" data-rel="popup" class="ui-btn ui-corner-all" data-position-to="window" id="hour_window_color_box" style="height: 5vw; background-color: #FFFFFF;"></a>
+                <div id="hour_text_color" data-role="fieldcontain" class="hidden">
+                    <label for="background-color">Text Color (on the window: hour)</label>
+                    <a href="#color-picker" data-rel="popup" class="ui-btn ui-corner-all" data-position-to="window" id="hour_text_color_box" style="height: 5vw; background-color: #000000;"></a>
+                </div>
+                
+                <div id="hour_window_fill_color" data-role="fieldcontain" class="hidden">
+                    <label for="background-color">Hour Window Color (Filling)</label>
+                    <a href="#color-picker" data-rel="popup" class="ui-btn ui-corner-all" data-position-to="window" id="hour_window_fill_color_box" style="height: 5vw; background-color: #FFFFFF;"></a>
+                </div>
+                
+                <div id="hour_window_stroke_color" data-role="fieldcontain" class="hidden">
+                    <label for="background-color">Hour Window Color (Stroke)</label>
+                    <a href="#color-picker" data-rel="popup" class="ui-btn ui-corner-all" data-position-to="window" id="hour_window_stroke_color_box" style="height: 5vw; background-color: #FFFFFF;"></a>
                 </div>
                 
                 <div id="min_fill_color" data-role="fieldcontain" class="hidden">
