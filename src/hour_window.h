@@ -33,7 +33,7 @@
 #define DATE_FORMAT_MAX_LENGTH 40
   
 // Each color has a length of 6 plus the ending char
-#define EDITABLE_COLORS_LENGTH 55
+#define EDITABLE_COLORS_LENGTH 67
 
 // Bluetooth vibration notification
 #define BT_VIBRATE_OFF 0

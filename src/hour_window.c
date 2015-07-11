@@ -48,7 +48,8 @@ static GColor middleDotColor;
 static GColor discFill;
 static GColor discStroke;
 static GColor bgColor;
-static GColor textColor;
+static GColor bgTextColor;
+static GColor hourTextColor;
 static GColor windowFill;
 static GColor windowStroke;
 
@@ -180,12 +181,14 @@ static void bt_handler(bool connected) {
           windowFill = bluetoothConnectedColor;
         #else
           if (gcolor_equal(bgColor, GColorWhite)) {
-            text_layer_set_text_color(batt_text_layer, GColorBlack);
-            text_layer_set_text_color(date_text_layer, GColorBlack);
+            bgTextColor = GColorBlack;
+            text_layer_set_text_color(batt_text_layer, bgTextColor);
+            text_layer_set_text_color(date_text_layer, bgTextColor);
             bitmap_layer_set_compositing_mode(batt_charging_icon_layer, GCompOpAssignInverted);
           } else {
-            text_layer_set_text_color(batt_text_layer, GColorWhite);
-            text_layer_set_text_color(date_text_layer, GColorWhite);
+            bgTextColor = GColorWhite;
+            text_layer_set_text_color(batt_text_layer, bgTextColor);
+            text_layer_set_text_color(date_text_layer, bgTextColor);
             bitmap_layer_set_compositing_mode(batt_charging_icon_layer, GCompOpAssign);
           }
         #endif
@@ -241,12 +244,14 @@ static void bt_handler(bool connected) {
           windowFill = bluetoothDisconnectedColor;
         #else
           if (gcolor_equal(bgColor, GColorWhite)) {
-            text_layer_set_text_color(batt_text_layer, GColorBlack);
-            text_layer_set_text_color(date_text_layer, GColorBlack);
+            bgTextColor = GColorBlack;
+            text_layer_set_text_color(batt_text_layer, bgTextColor);
+            text_layer_set_text_color(date_text_layer, bgTextColor);
             bitmap_layer_set_compositing_mode(batt_charging_icon_layer, GCompOpAssignInverted);
           } else {
-            text_layer_set_text_color(batt_text_layer, GColorWhite);
-            text_layer_set_text_color(date_text_layer, GColorWhite);
+            bgTextColor = GColorWhite;
+            text_layer_set_text_color(batt_text_layer, bgTextColor);
+            text_layer_set_text_color(date_text_layer, bgTextColor);
             bitmap_layer_set_compositing_mode(batt_charging_icon_layer, GCompOpAssign);
           }
         #endif
@@ -373,20 +378,18 @@ static void update_window_proc(Layer *layer, GContext *ctx) {
   //Update hour text
   if(clock_is_24h_style() == true) {
     print_time(buffer, "%H", t);
-    text_layer_set_text(hour_text_layer, buffer);
     if (prevHour < 0) prevHour = 23;
   } else {
     print_time(buffer, "%I", t);
-    text_layer_set_text(hour_text_layer, buffer);
     if (prevHour < 0) prevHour = 11;
   }
-  
   // Handle lack of non-padded hour format string.
-  //if (s_time_text[0] == '0')
-  //{
-  //  memmove(s_time_text, &s_time_text[1], sizeof(s_time_text) - 1);
-  //}
+  if (buffer[0] == '0') memmove(buffer, &buffer[1], sizeof(buffer) - 1);
+  text_layer_set_text(hour_text_layer, buffer);
+  
   print_int(buffer_prev, "%d", prevHour);
+  // Handle lack of non-padded hour format string.
+  if (buffer_prev[0] == '0') memmove(buffer_prev, &buffer_prev[1], sizeof(buffer_prev) - 1);
   text_layer_set_text(last_hour_text_layer, buffer_prev);
   
   if(show_date || (is_tap_active && tap_affects_date)) {
@@ -528,21 +531,23 @@ static void update_minute_hand_proc(Layer *layer, GContext *ctx) {
 		else return;
     
     bgColor = GColorFromHEX(colorInts[0]);
-    textColor = GColorFromHEX(colorInts[1]);
+    bgTextColor = GColorFromHEX(colorInts[1]);
     
     discFill = GColorFromHEX(colorInts[2]);
     discStroke = GColorFromHEX(colorInts[3]);
     
-    windowStroke = GColorFromHEX(colorInts[4]);
+    windowFill = GColorFromHEX(colorInts[4]);
+    windowStroke = GColorFromHEX(colorInts[5]);
     
-    minuteHandFill = GColorFromHEX(colorInts[5]);
-    minuteHandStroke = GColorFromHEX(colorInts[6]);
+    minuteHandFill = GColorFromHEX(colorInts[6]);
+    minuteHandStroke = GColorFromHEX(colorInts[7]);
     
-    bluetoothConnectedColor = GColorFromHEX(colorInts[7]);
-    bluetoothDisconnectedColor = GColorFromHEX(colorInts[8]);
+    bluetoothConnectedColor = GColorFromHEX(colorInts[8]);
+    bluetoothDisconnectedColor = GColorFromHEX(colorInts[9]);
+    
+    hourTextColor = GColorFromHEX(colorInts[10]);
     
     middleDotColor = GColorFromHEX(colorInts[2]);
-    windowFill = GColorFromHEX(colorInts[0]);
     
   }
 #else //aplite
@@ -567,11 +572,11 @@ static void update_minute_hand_proc(Layer *layer, GContext *ctx) {
     }
   
     if(hour_color == 0) { // Black
-      textColor = GColorWhite;
+      hourTextColor = GColorWhite;
       windowFill = GColorBlack;
       windowStroke = GColorWhite;
     } else if (hour_color == 1) { // White
-      textColor = GColorBlack;
+      hourTextColor = GColorBlack;
       windowFill = GColorWhite;
       windowStroke = GColorBlack;
     }
@@ -580,8 +585,7 @@ static void update_minute_hand_proc(Layer *layer, GContext *ctx) {
       discFill = GColorBlack;
       discStroke = GColorBlack;
       bgColor = GColorWhite;
-      text_layer_set_text_color(batt_text_layer, GColorBlack);
-      text_layer_set_text_color(date_text_layer, GColorBlack);
+      bgTextColor = GColorBlack;
       bitmap_layer_set_compositing_mode(batt_charging_icon_layer, GCompOpAssignInverted);
       if (bluetooth_mode == BT_CHANGE_BG) {
         discStroke = GColorWhite;
@@ -599,8 +603,7 @@ static void update_minute_hand_proc(Layer *layer, GContext *ctx) {
       discFill = GColorWhite;
       discStroke = GColorWhite;
       bgColor = GColorBlack;
-      text_layer_set_text_color(batt_text_layer, GColorWhite);
-      text_layer_set_text_color(date_text_layer, GColorWhite);
+      bgTextColor = GColorWhite;
       bitmap_layer_set_compositing_mode(batt_charging_icon_layer, GCompOpAssign);
       if (bluetooth_mode == BT_CHANGE_BG) {
         discStroke = GColorBlack;
@@ -618,8 +621,7 @@ static void update_minute_hand_proc(Layer *layer, GContext *ctx) {
       discFill = GColorBlack;
       discStroke = GColorWhite;
       bgColor = GColorBlack;
-      text_layer_set_text_color(batt_text_layer, GColorWhite);
-      text_layer_set_text_color(date_text_layer, GColorWhite);
+      bgTextColor = GColorWhite;
       bitmap_layer_set_compositing_mode(batt_charging_icon_layer, GCompOpAssign);
       if (bluetooth_mode == BT_CHANGE_BG) {
         bluetoothConnectedColor = GColorBlack;
@@ -635,8 +637,7 @@ static void update_minute_hand_proc(Layer *layer, GContext *ctx) {
       discFill = GColorWhite;
       discStroke = GColorBlack;
       bgColor = GColorWhite;
-      text_layer_set_text_color(batt_text_layer, GColorBlack);
-      text_layer_set_text_color(date_text_layer, GColorBlack);
+      bgTextColor = GColorBlack;
       bitmap_layer_set_compositing_mode(batt_charging_icon_layer, GCompOpAssignInverted);
       if (bluetooth_mode == BT_CHANGE_BG) {
         bluetoothConnectedColor = GColorWhite;
@@ -652,8 +653,7 @@ static void update_minute_hand_proc(Layer *layer, GContext *ctx) {
       discFill = GColorBlack;
       discStroke = GColorBlack;
       bgColor = GColorBlack;
-      text_layer_set_text_color(batt_text_layer, GColorWhite);
-      text_layer_set_text_color(date_text_layer, GColorWhite);
+      bgTextColor = GColorWhite;
       bitmap_layer_set_compositing_mode(batt_charging_icon_layer, GCompOpAssign);
       if (bluetooth_mode == BT_CHANGE_BG) {
         bluetoothConnectedColor = GColorBlack;
@@ -669,8 +669,7 @@ static void update_minute_hand_proc(Layer *layer, GContext *ctx) {
       discFill = GColorWhite;
       discStroke = GColorWhite;
       bgColor = GColorWhite;
-      text_layer_set_text_color(batt_text_layer, GColorBlack);
-      text_layer_set_text_color(date_text_layer, GColorBlack);
+      bgTextColor = GColorBlack;
       bitmap_layer_set_compositing_mode(batt_charging_icon_layer, GCompOpAssignInverted);
       if (bluetooth_mode == BT_CHANGE_BG) {
         bluetoothConnectedColor = GColorWhite;
@@ -786,7 +785,7 @@ static void in_recv_handler(DictionaryIterator *iterator, void *context) {
       layer_set_frame(bitmap_layer_get_layer(bt_status_conn_layer), bt_icon_pos_rect);
       layer_set_frame(bitmap_layer_get_layer(bt_status_disc_layer), bt_icon_pos_rect);
       layer_set_frame(text_layer_get_layer(date_text_layer), date_pos_rect);
-      persist_write_int(KEY_SHOW_DATE, new_val);
+      persist_write_int(KEY_DATE_POS, new_val);
       break;
     case KEY_DATE_FORMAT:
       memcpy(date_format, t->value->cstring, t->length);
@@ -941,13 +940,12 @@ static void in_recv_handler(DictionaryIterator *iterator, void *context) {
     apply_colors(new_theme, new_min_hand_color, new_hour_color);
   #endif
   
-  text_layer_set_text_color(last_hour_text_layer, textColor);
-  text_layer_set_text_color(hour_text_layer, textColor);
-#ifdef PBL_COLOR // in aplite the text color might be the same as the background
-  //so we change the battery/date text together with the background to make sure it is ok
-  text_layer_set_text_color(batt_text_layer, textColor);
-  text_layer_set_text_color(date_text_layer, textColor);
-#endif
+  text_layer_set_text_color(last_hour_text_layer, hourTextColor);
+  text_layer_set_text_color(hour_text_layer, hourTextColor);
+
+  text_layer_set_text_color(batt_text_layer, bgTextColor);
+  text_layer_set_text_color(date_text_layer, bgTextColor);
+  
   window_set_background_color(window, bgColor);
   bt_handler(bluetooth_connection_service_peek());
   batt_handler(battery_state_service_peek());
@@ -983,7 +981,7 @@ static void window_load(Window *window) {
     battery_mode = persist_read_int_safe(KEY_BATTERY_SIGNAL, BATT_CHANGE_MIN_HANDLE_FILL);
   
     battery_color_scheme = persist_read_int_safe(KEY_BATTERY_COLOR_SCHEME, 3);
-    memcpy(basalt_colors, "000000FFFFFF00550055AA00FFFFFFFFFFFFAAAAAA55AA00555500"+'\0', EDITABLE_COLORS_LENGTH);
+    memcpy(basalt_colors, "000000FFFFFF00550055AA00000000FFFFFFFFFFFFAAAAAA55AA00555500FFFFFF"+'\0', EDITABLE_COLORS_LENGTH);
 		persist_read_string(KEY_COLORS_BASALT, basalt_colors, EDITABLE_COLORS_LENGTH);
   
     apply_colors();
@@ -1021,7 +1019,7 @@ static void window_load(Window *window) {
   }
   batt_text_layer = text_layer_create(batt_text_pos_rect);
   text_layer_set_system_font(batt_text_layer, FONT_KEY_GOTHIC_18);
-  text_layer_set_colors(batt_text_layer, textColor, GColorClear);
+  text_layer_set_colors(batt_text_layer, bgTextColor, GColorClear);
   text_layer_set_text_alignment(batt_text_layer, GTextAlignmentRight);
   text_layer_add_to_window(batt_text_layer, window);
   batt_charging_icon = gbitmap_create_with_resource(RESOURCE_ID_BATTERY_CHARGING_ICON);
@@ -1057,13 +1055,13 @@ static void window_load(Window *window) {
   
   //Hour text set up
   hour_text_layer = text_layer_create(GRect(0, 0, TEXT_WIDTH, TEXT_HEIGHT));
-  text_layer_set_colors(hour_text_layer, textColor, GColorClear);
+  text_layer_set_colors(hour_text_layer, hourTextColor, GColorClear);
   text_layer_set_text_alignment(hour_text_layer, GTextAlignmentCenter);
   text_layer_set_system_font(hour_text_layer, FONT_KEY_GOTHIC_18_BOLD);
   
   //Previous hour text (helps with the animations)
   last_hour_text_layer = text_layer_create(GRect(0, 0, TEXT_WIDTH, TEXT_HEIGHT));
-  text_layer_set_colors(last_hour_text_layer, textColor, GColorClear);
+  text_layer_set_colors(last_hour_text_layer, hourTextColor, GColorClear);
   text_layer_set_text_alignment(last_hour_text_layer, GTextAlignmentCenter);
   text_layer_set_system_font(last_hour_text_layer, FONT_KEY_GOTHIC_18_BOLD);
   
@@ -1075,7 +1073,7 @@ static void window_load(Window *window) {
     date_pos_rect = GRect(0, PEBBLE_HEIGHT - TEXT_HEIGHT + 6, PEBBLE_WIDTH, TEXT_HEIGHT);
   }
   date_text_layer = text_layer_create(date_pos_rect);
-  text_layer_set_colors(date_text_layer, textColor, GColorClear);
+  text_layer_set_colors(date_text_layer, bgTextColor, GColorClear);
   text_layer_set_text_alignment(date_text_layer, GTextAlignmentCenter);
   text_layer_set_system_font(date_text_layer, FONT_KEY_GOTHIC_14);
   
