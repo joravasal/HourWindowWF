@@ -1,3 +1,9 @@
+var FLAG_SECONDS = 1;
+var FLAG_MINUTE_MARKS = 2;
+var FLAG_DATE = 4;
+var FLAG_BT = 8;
+var FLAG_BATT = 16;
+
 var watch_version = -1;
 var COLOR_STRING_LENGTH = 54;
 var bluetooth_res = -1;
@@ -294,10 +300,18 @@ function saveOptions() {
 
 	var options = {};
 	
+        options.KEY_SHOW_SECONDS = parseInt($("input[name=show_seconds]:checked").val(), 10);
         options.KEY_SHOW_MINUTE_MARKS = parseInt($("input[name=show_minute_marks]:checked").val(), 10);
         options.KEY_SHOW_DATE = parseInt($("input[name=show_date]:checked").val(), 10);
         options.KEY_DATE_FORMAT = $("#date_format_input").val();
         options.KEY_DATE_POS = parseInt($("input[name=date_pos]:checked").val(), 10);
+        
+        var tap_length = parseInt($("#tap_duration_input").val(), 10);
+        if(!isNumber(tap_length)) tap_length = 5;
+        if(tap_length > 60) tap_length = 60;
+        if(tap_length < 0) tap_length = 0;
+        options.KEY_TAP_DURATION = tap_length;
+        options.KEY_TAP_AFFECTS = calculate_tap_affects_option();
         
         options.KEY_BT_SIGNAL = bluetooth_res;
         options.KEY_BT_VIBRATE = parseInt($("input[name=bluetooth_vibrate]:checked").val(), 10);
@@ -342,9 +356,20 @@ $("document").ready(function() {
         var vibrate = getQueryParam("btVibrate", 2);
         $('#bluetooth_vibrate_'+vibrate).prop( "checked", true ).checkboxradio("refresh");
         
+        var show_seconds = getQueryParam("show_sec", -1);
+        if(show_seconds < 0) show_seconds = 0; //solves a problem getQueryParam has with default value 0
+        $('#show_seconds_'+show_seconds).prop( "checked", true ).checkboxradio("refresh");
+        
         var show_minute_marks = getQueryParam("show_min_marks", -1);
         if(show_minute_marks < 0) show_minute_marks = 0; //solves a problem getQueryParam has with default value 0
         $('#show_minute_marks_'+show_minute_marks).prop( "checked", true ).checkboxradio("refresh");
+        
+        var tap_length = getQueryParam("tap_length", 5);
+        tap_length = parseInt(isNumber(tap_length) && tap_length >= 0 && tap_length <= 60 ? tap_length : 5);
+        $('#tap_duration_input').val(tap_length);
+        
+        var tap_affects = getQueryParam("tap_affects", 23);
+        set_up_tap_option(tap_affects);
         
         var show_date = getQueryParam("show_date", -1);
         if(show_date < 0) show_date = 0; //solves a problem getQueryParam has with default value 0
@@ -439,6 +464,34 @@ $("document").ready(function() {
 	}
 	
 });
+
+function set_up_tap_option(affects) {
+    if (FLAG_SECONDS & affects) {
+        $('#tap_affects_0').prop( "checked", true ).checkboxradio("refresh");
+    }
+    if (FLAG_MINUTE_MARKS & affects) {
+        $('#tap_affects_1').prop( "checked", true ).checkboxradio("refresh");
+    }
+    if (FLAG_DATE & affects) {
+        $('#tap_affects_2').prop( "checked", true ).checkboxradio("refresh");
+    }
+    if (FLAG_BT & affects) {
+        $('#tap_affects_3').prop( "checked", true ).checkboxradio("refresh");
+    }
+    if (FLAG_BATT & affects) {
+        $('#tap_affects_4').prop( "checked", true ).checkboxradio("refresh");
+    }
+}
+
+function calculate_tap_affects_option() {
+    var res = 0;
+    if ($('#tap_affects_0').is(':checked')) res += FLAG_SECONDS;
+    if ($('#tap_affects_1').is(':checked')) res += FLAG_MINUTE_MARKS;
+    if ($('#tap_affects_2').is(':checked')) res += FLAG_DATE;
+    if ($('#tap_affects_3').is(':checked')) res += FLAG_BT;
+    if ($('#tap_affects_4').is(':checked')) res += FLAG_BATT;
+    return res;
+}
 
 function isNumber(n) {
 	return !isNaN(parseFloat(n)) && isFinite(n);
