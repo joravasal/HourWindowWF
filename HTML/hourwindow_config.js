@@ -5,7 +5,7 @@ var FLAG_BT = 8;
 var FLAG_BATT = 16;
 
 var watch_version = -1;
-var COLOR_STRING_LENGTH = 54;
+var COLOR_STRING_LENGTH = 66;
 var bluetooth_res = -1;
 
 //Function to convert hex format to a rgb color
@@ -17,16 +17,6 @@ function rgb2hex(rgb){
   ("0" + parseInt(rgb[3],10).toString(16)).slice(-2)).toUpperCase();
 }
 
-$(function () {
-  $('#show_date').change(function() {
-        var show_date = parseInt($("input[name=show_date]:checked").val(), 10);
-        if(show_date == 0) {
-            $('#date_format').addClass("hidden");
-        } else {
-            $('#date_format').removeClass("hidden");
-        }
-  });
-});
 
 $(function () {
   $('#bluetooth_signal').change(function() {
@@ -161,7 +151,7 @@ $(function () {
 });
 
 $(function () {
-  $('#text_color_box').on('click', function (event) {
+  $('#bg_text_color_box').on('click', function (event) {
 	changeColorObject = 1;
 	highlightColorBox($(this));
   });
@@ -182,36 +172,50 @@ $(function () {
 });
 
 $(function () {
-  $('#hour_window_color_box').on('click', function (event) {
+  $('#hour_window_fill_color_box').on('click', function (event) {
 	changeColorObject = 4;
 	highlightColorBox($(this));
   });
 });
 
 $(function () {
-  $('#min_fill_color_box').on('click', function (event) {
+  $('#hour_window_stroke_color_box').on('click', function (event) {
 	changeColorObject = 5;
 	highlightColorBox($(this));
   });
 });
 
 $(function () {
-  $('#min_stroke_color_box').on('click', function (event) {
+  $('#min_fill_color_box').on('click', function (event) {
 	changeColorObject = 6;
 	highlightColorBox($(this));
   });
 });
 
 $(function () {
-  $('#bt_con_color_color_box').on('click', function (event) {
+  $('#min_stroke_color_box').on('click', function (event) {
 	changeColorObject = 7;
 	highlightColorBox($(this));
   });
 });
 
 $(function () {
-  $('#bt_dis_color_color_box').on('click', function (event) {
+  $('#bt_con_color_color_box').on('click', function (event) {
 	changeColorObject = 8;
+	highlightColorBox($(this));
+  });
+});
+
+$(function () {
+  $('#bt_dis_color_color_box').on('click', function (event) {
+	changeColorObject = 9;
+	highlightColorBox($(this));
+  });
+});
+
+$(function () {
+  $('#hour_text_color_box').on('click', function (event) {
+	changeColorObject = 10;
 	highlightColorBox($(this));
   });
 });
@@ -234,21 +238,25 @@ $(function () {
 	if (changeColorObject == 0)
 		$('#bg_color_box').css('background-color', selected_color);
         else if(changeColorObject == 1)
-		$('#text_color_box').css('background-color', selected_color);
+		$('#bg_text_color_box').css('background-color', selected_color);
 	else if(changeColorObject == 2)
 		$('#disk_fill_color_box').css('background-color', selected_color);
         else if(changeColorObject == 3)
 		$('#disk_stroke_color_box').css('background-color', selected_color);
         else if(changeColorObject == 4)
-		$('#hour_window_color_box').css('background-color', selected_color);
+		$('#hour_window_fill_color_box').css('background-color', selected_color);
         else if(changeColorObject == 5)
-		$('#min_fill_color_box').css('background-color', selected_color);
+		$('#hour_window_stroke_color_box').css('background-color', selected_color);
         else if(changeColorObject == 6)
-                $('#min_stroke_color_box').css('background-color', selected_color);
+		$('#min_fill_color_box').css('background-color', selected_color);
         else if(changeColorObject == 7)
-                $('#bt_con_color_color_box').css('background-color', selected_color);
+                $('#min_stroke_color_box').css('background-color', selected_color);
         else if(changeColorObject == 8)
+                $('#bt_con_color_color_box').css('background-color', selected_color);
+        else if(changeColorObject == 9)
                 $('#bt_dis_color_color_box').css('background-color', selected_color);
+        else if(changeColorObject == 10)
+		$('#hour_text_color_box').css('background-color', selected_color);
 	$( "#color-picker" ).popup( "close" );
   });
 });
@@ -322,17 +330,21 @@ function saveOptions() {
             options.KEY_BATTERY_SIGNAL = parseInt($("#battery_mode_aplite_select").val(), 10);
         } else {
             var colors = rgb2hex($('#bg_color_box').css("background-color")).replace("#", '');
-            colors = colors + rgb2hex($('#text_color_box').css("background-color")).replace("#", '');
+            colors = colors + rgb2hex($('#bg_text_color_box').css("background-color")).replace("#", '');
             
             colors = colors + rgb2hex($('#disk_fill_color_box').css("background-color")).replace("#", '');
             colors = colors + rgb2hex($('#disk_stroke_color_box').css("background-color")).replace("#", '');
-            colors = colors + rgb2hex($('#hour_window_color_box').css("background-color")).replace("#", '');
+            
+            colors = colors + rgb2hex($('#hour_window_fill_color_box').css("background-color")).replace("#", '');
+            colors = colors + rgb2hex($('#hour_window_stroke_color_box').css("background-color")).replace("#", '');
             
             colors = colors + rgb2hex($('#min_fill_color_box').css("background-color")).replace("#", '');
             colors = colors + rgb2hex($('#min_stroke_color_box').css("background-color")).replace("#", '');
             
             colors = colors + rgb2hex($('#bt_con_color_color_box').css("background-color")).replace("#", '');
             colors = colors + rgb2hex($('#bt_dis_color_color_box').css("background-color")).replace("#", '');
+            
+            colors = colors + rgb2hex($('#hour_text_color_box').css("background-color")).replace("#", '');
             
             options.KEY_COLORS_BASALT = colors;
             
@@ -376,9 +388,6 @@ $("document").ready(function() {
         $('#show_date_'+show_date).prop( "checked", true ).checkboxradio("refresh");
         var date_format = getQueryParam("date_format", "d, D.m (W), Y");
         $('#date_format_input').val(date_format);
-        if(show_date == 1) {
-            $('#date_format').removeClass("hidden");
-        }
         var date_pos = getQueryParam("date_pos", 1);
         $('#date_pos_'+date_pos).prop( "checked", true ).checkboxradio("refresh");
         
@@ -417,19 +426,23 @@ $("document").ready(function() {
             $('#battery_mode_basalt_select').val(batt_mode).selectmenu("refresh");
             
             var basalt_colors = getQueryParam("basalt_colors", 0);
-            basalt_colors = basalt_colors.length == COLOR_STRING_LENGTH ? basalt_colors : "000000FFFFFF00550055AA00FFFFFFFFFFFFAAAAAA55AA00555500";
+            basalt_colors = basalt_colors.length == COLOR_STRING_LENGTH ? basalt_colors : "000000FFFFFF00550055AA00000000FFFFFFFFFFFFAAAAAA55AA00555500FFFFFF";
             $('#bg_color_box').css('background-color', "#"+basalt_colors.substring(0,6));
-            $('#text_color_box').css('background-color', "#"+basalt_colors.substring(6,12));
+            $('#bg_text_color_box').css('background-color', "#"+basalt_colors.substring(6,12));
             $('#disk_fill_color_box').css('background-color', "#"+basalt_colors.substring(12,18));
             $('#disk_stroke_color_box').css('background-color', "#"+basalt_colors.substring(18,24));
-            $('#hour_window_color_box').css('background-color', "#"+basalt_colors.substring(24,30));
-            $('#min_fill_color_box').css('background-color', "#"+basalt_colors.substring(30,36));
-            $('#min_stroke_color_box').css('background-color', "#"+basalt_colors.substring(36,42));
-            $('#bt_con_color_color_box').css('background-color', "#"+basalt_colors.substring(42,48));
-            $('#bt_dis_color_color_box').css('background-color', "#"+basalt_colors.substring(48,54));
+            $('#hour_window_fill_color_box').css('background-color', "#"+basalt_colors.substring(24,30));
+            $('#hour_window_stroke_color_box').css('background-color', "#"+basalt_colors.substring(30,36));
+            $('#min_fill_color_box').css('background-color', "#"+basalt_colors.substring(36,42));
+            $('#min_stroke_color_box').css('background-color', "#"+basalt_colors.substring(42,48));
+            $('#bt_con_color_color_box').css('background-color', "#"+basalt_colors.substring(48,54));
+            $('#bt_dis_color_color_box').css('background-color', "#"+basalt_colors.substring(54,60));
+            $('#hour_text_color_box').css('background-color', "#"+basalt_colors.substring(60,66));
             
-            $('#text_color').removeClass("hidden");
-            $('#hour_window_color').removeClass("hidden");
+            $('#bg_text_color').removeClass("hidden");
+            $('#hour_text_color').removeClass("hidden");
+            $('#hour_window_stroke_color').removeClass("hidden");
+            $('#hour_window_fill_color').removeClass("hidden");
             
             if(btSignal == 1) {
                 $("#color_affects_basalt_select").val(bluetooth_res).selectmenu("refresh");
