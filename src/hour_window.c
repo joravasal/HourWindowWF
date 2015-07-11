@@ -11,11 +11,17 @@ static Layer *background_layer;
 TextLayer *hour_text_layer;
 TextLayer *last_hour_text_layer;
 TextLayer *date_text_layer;
-static char date_format[DATE_FORMAT_MAX_LENGTH];
+char strftime_formated_date[DATE_FORMAT_MAX_LENGTH];
 
 bool show_date;
 bool show_minute_marks;
-bool show_on_tap;
+bool show_seconds = false;
+bool is_tap_active = false;
+bool tap_affects_date;
+bool tap_affects_batt;
+bool tap_affects_bt;
+bool tap_affects_minute_marks;
+bool tap_affects_seconds;
 
 static GPath *minute_arrow;
 static GPath *window_path;
@@ -55,7 +61,7 @@ static GBitmap *batt_charging_icon;
 static BitmapLayer *batt_charging_icon_layer;
 
 static AppTimer *tap_timer;
-static int tap_timer_length = TAP_TIMER_LENGTH_DEF;
+static int tap_timer_length;
 
 AppTimer *timer; //for the animation
 const int timer_delay = 40;
@@ -109,7 +115,7 @@ static GColor8 battery_color(BatteryChargeState charge) {
 
 static void batt_handler(BatteryChargeState charge) {
   LOG("Battery event handler, charge = %d%%", charge.charge_percent);
-  if(show_on_tap || (battery_mode == BATT_NUMBER && charge.charge_percent <= battery_below_level)) {
+  if((is_tap_active && tap_affects_batt) || (battery_mode == BATT_NUMBER && charge.charge_percent <= battery_below_level)) {
     layer_show(text_layer_get_layer(batt_text_layer));
     static char batt_test_buffer[] = "100%";
     int vert_pos = layer_get_frame(text_layer_get_layer(batt_text_layer)).origin.y;
@@ -285,18 +291,24 @@ static void bt_handler(bool connected) {
 
 static void end_tap_timer(void *data) {
   tap_timer = NULL;
-  show_on_tap = false;
-  tick_timer_service_subscribe(MINUTE_UNIT, time_passes_tick_handler);
-  batt_handler(battery_state_service_peek());
-  if(bluetooth_connection_service_peek()) {
-    layer_hide(bt_status_disc_layer);
-    if(bluetooth_mode != BT_ICON) {
-      layer_hide(bt_status_conn_layer);
-    }
-  } else {
-    layer_hide(bt_status_conn_layer);
-    if(bluetooth_mode != BT_ICON && bluetooth_mode != BT_ICON_ONLY_DISC) {
+  is_tap_active = false;
+  if(tap_affects_seconds) {
+     tick_timer_service_subscribe(MINUTE_UNIT, time_passes_tick_handler);
+  }
+  if(tap_affects_batt) {
+    batt_handler(battery_state_service_peek());
+  }
+  if(tap_affects_bt) {
+    if(bluetooth_connection_service_peek()) {
       layer_hide(bt_status_disc_layer);
+      if(bluetooth_mode != BT_ICON) {
+        layer_hide(bt_status_conn_layer);
+      }
+    } else {
+      layer_hide(bt_status_conn_layer);
+      if(bluetooth_mode != BT_ICON && bluetooth_mode != BT_ICON_ONLY_DISC) {
+        layer_hide(bt_status_disc_layer);
+      }
     }
   }
   layer_mark_dirty(background_layer);
@@ -312,15 +324,22 @@ static void tap_handler(AccelAxisType axis, int32_t direction)
     } else {
       INFO("X<0");
     }
-    show_on_tap=true;
-    batt_handler(battery_state_service_peek());
-    if(bluetooth_connection_service_peek()) {
-      if(bluetooth_mode != BT_ICON) layer_show(bt_status_conn_layer);
-    } else {
-      if(bluetooth_mode != BT_ICON && bluetooth_mode != BT_ICON_ONLY_DISC)
-        layer_show(bt_status_disc_layer);
+    is_tap_active = true;
+    if (tap_affects_batt) {
+      batt_handler(battery_state_service_peek());
     }
-    tick_timer_service_subscribe(SECOND_UNIT, time_passes_tick_handler);
+    if (tap_affects_bt) {
+      if(bluetooth_connection_service_peek()) {
+        if(bluetooth_mode != BT_ICON)
+          layer_show(bt_status_conn_layer);
+      } else {
+        if(bluetooth_mode != BT_ICON && bluetooth_mode != BT_ICON_ONLY_DISC)
+          layer_show(bt_status_disc_layer);
+      }
+    }
+    if(tap_affects_seconds) {
+      tick_timer_service_subscribe(SECOND_UNIT, time_passes_tick_handler);
+    }
     layer_mark_dirty(background_layer);
     tap_timer = app_timer_register(tap_timer_length, end_tap_timer, NULL);
     break;
@@ -350,8 +369,7 @@ static void update_window_proc(Layer *layer, GContext *ctx) {
   static char buffer_prev[] = "00";
   static char buffer_date[40] = "Wed, 24 Jun (w25), 2015/0";
   
-  int hour = t->tm_hour;
-  int prevHour = hour - 1;
+  int prevHour = t->tm_hour - 1;
   //Update hour text
   if(clock_is_24h_style() == true) {
     print_time(buffer, "%H", t);
@@ -362,66 +380,24 @@ static void update_window_proc(Layer *layer, GContext *ctx) {
     text_layer_set_text(hour_text_layer, buffer);
     if (prevHour < 0) prevHour = 11;
   }
+  
+  // Handle lack of non-padded hour format string.
+  //if (s_time_text[0] == '0')
+  //{
+  //  memmove(s_time_text, &s_time_text[1], sizeof(s_time_text) - 1);
+  //}
   print_int(buffer_prev, "%d", prevHour);
   text_layer_set_text(last_hour_text_layer, buffer_prev);
   
-  if(show_date || show_on_tap) {
-    layer_show(text_layer_get_layer(date_text_layer));
-    char strftime_formated_date[30] = "";
-    int curr_pos = 0;
-    for(uint i = 0; i < strlen(date_format); i++){
-      if(!date_format[i]) {
-        break;
-      }
-      switch(date_format[i]) {
-        case 'd':
-          strftime_formated_date[curr_pos] = '%';
-          strftime_formated_date[curr_pos+1] = 'a';
-          curr_pos += 2;
-          break;
-        case 'D':
-          strftime_formated_date[curr_pos] = '%';
-          strftime_formated_date[curr_pos+1] = 'e';
-          curr_pos += 2;
-          break;
-        case 'm':
-          strftime_formated_date[curr_pos] = '%';
-          strftime_formated_date[curr_pos+1] = 'b';
-          curr_pos += 2;
-          break;
-        case 'M':
-          strftime_formated_date[curr_pos] = '%';
-          strftime_formated_date[curr_pos+1] = 'm';
-          curr_pos += 2;
-          break;
-        case 'W':
-          strftime_formated_date[curr_pos] = '%';
-          strftime_formated_date[curr_pos+1] = 'W';
-          curr_pos += 2;
-          break;
-        case 'Y':
-          strftime_formated_date[curr_pos] = '%';
-          strftime_formated_date[curr_pos+1] = 'Y';
-          curr_pos += 2;
-          break;
-        case 'y':
-          strftime_formated_date[curr_pos] = '%';
-          strftime_formated_date[curr_pos+1] = 'y';
-          curr_pos += 2;
-          break;
-        default:
-          strftime_formated_date[curr_pos] = date_format[i];
-          curr_pos++;
-      }
-      strftime_formated_date[curr_pos] = '\0';
-    }
+  if(show_date || (is_tap_active && tap_affects_date)) {
     print_time(buffer_date, strftime_formated_date, t);
     text_layer_set_text(date_text_layer, buffer_date);
+    layer_show(text_layer_get_layer(date_text_layer));
   } else {
     layer_hide(text_layer_get_layer(date_text_layer));
   }
   
-  GPoint auxPoint = ANALOG_BG_HOUR_POINTS[hour % 12];
+  GPoint auxPoint = ANALOG_BG_HOUR_POINTS[t->tm_hour % 12];
   layer_set_frame(text_layer_get_layer(hour_text_layer), GRect(auxPoint.x - (TEXT_WIDTH / 2), auxPoint.y - (TEXT_HEIGHT / 2) + TEXT_Y_OFFSET, TEXT_WIDTH, TEXT_HEIGHT));
   auxPoint = ANALOG_BG_HOUR_POINTS[prevHour % 12];
   layer_set_frame(text_layer_get_layer(last_hour_text_layer), GRect(auxPoint.x - (TEXT_WIDTH / 2), auxPoint.y - (TEXT_HEIGHT / 2) + TEXT_Y_OFFSET, TEXT_WIDTH, TEXT_HEIGHT));  
@@ -433,7 +409,7 @@ static void update_window_proc(Layer *layer, GContext *ctx) {
   graphics_fill_circle(ctx, center, CIRCLE_INNER_RADIUS);
   
   //Drawing the minute positions for the surrounding 5 minutes
-  if(show_minute_marks || show_on_tap) {
+  if(show_minute_marks || (is_tap_active && tap_affects_minute_marks)) {
     graphics_context_set_fill_color(ctx, discStroke);
     int start_pos = t->tm_min - (t->tm_min % 5);
     for(int i = start_pos; i <= start_pos + 5; i++) {
@@ -448,7 +424,8 @@ static void update_window_proc(Layer *layer, GContext *ctx) {
   }
   
   //Drawing second mark
-  if(show_on_tap) {
+  if(show_seconds || (is_tap_active && tap_affects_seconds)) {
+    graphics_context_set_fill_color(ctx, discStroke);
     int32_t second_angle = TRIG_MAX_ANGLE * t->tm_sec / 60;
     GPoint secondMark;
     secondMark.y = (-cos_lookup(second_angle) * (CIRCLE_OUTER_RADIUS + 1) / TRIG_MAX_RATIO) + center.y;
@@ -456,7 +433,7 @@ static void update_window_proc(Layer *layer, GContext *ctx) {
     graphics_fill_circle(ctx, secondMark, 4);
   }
     
-  current_angle = 30 * ((hour) % 12);
+  current_angle = 30 * ((t->tm_hour) % 12);
   
   //Check if we have to start an animation
   if(current_angle > timer_angle || (current_angle == 0 && timer_angle < 360 && timer_angle != 0)) {
@@ -709,6 +686,14 @@ static void update_minute_hand_proc(Layer *layer, GContext *ctx) {
   }
 #endif
 
+static void tap_affects_read(int code) {
+  tap_affects_seconds = code & TAP_AFFECTS_SEC;
+  tap_affects_minute_marks = code & TAP_AFFECTS_MIN;
+  tap_affects_date = code & TAP_AFFECTS_DATE;
+  tap_affects_bt = code & TAP_AFFECTS_BT;
+  tap_affects_batt = code & TAP_AFFECTS_BATT;
+}
+  
 static void in_recv_handler(DictionaryIterator *iterator, void *context) {
   LOG("JS message received");
   Tuple *t = dict_read_first(iterator);
@@ -719,6 +704,7 @@ static void in_recv_handler(DictionaryIterator *iterator, void *context) {
   int new_batt_below_lvl = -1;
   
   char new_date_format[DATE_FORMAT_MAX_LENGTH];
+  char date_format[16];
   
   GRect batt_text_pos_rect;
   GRect batt_icon_pos_rect;
@@ -736,6 +722,36 @@ static void in_recv_handler(DictionaryIterator *iterator, void *context) {
   while(t) {
     switch (t->key) {
     
+    case KEY_TAP_DURATION:
+      new_val = t->value->int16 * 1000;
+      if(new_val >= 0 && new_val <= 60000 && 
+        (new_val != tap_timer_length || !persist_exists(KEY_TAP_DURATION))) {
+        tap_timer_length = new_val;
+        persist_write_int(KEY_TAP_DURATION, new_val);
+      }
+      break;
+    case KEY_TAP_AFFECTS:
+      new_val = t->value->int16;
+      int old_val = persist_read_int_safe(KEY_TAP_AFFECTS, 23);
+      if(new_val >= 0 && (!persist_exists(KEY_TAP_AFFECTS)
+                          || new_val != old_val)) {
+        persist_write_int(KEY_TAP_AFFECTS, new_val);
+        tap_affects_read(new_val);
+      }
+      break;
+    case KEY_SHOW_SECONDS:
+      new_val = t->value->int16;
+      if(new_val >= 0 && new_val <= 1 && 
+         ((new_val == 1) != show_seconds || !persist_exists(KEY_SHOW_SECONDS))) {
+        show_seconds = (new_val == 1);
+        persist_write_int(KEY_SHOW_SECONDS, new_val);
+        if(show_seconds) {
+          tick_timer_service_subscribe(SECOND_UNIT, time_passes_tick_handler);
+        } else {
+          tick_timer_service_subscribe(MINUTE_UNIT, time_passes_tick_handler);
+        }
+      }
+      break;
     case KEY_SHOW_MINUTE_MARKS:
       new_val = t->value->int16;
       if(new_val >= 0 && new_val <= 1 && 
@@ -773,15 +789,62 @@ static void in_recv_handler(DictionaryIterator *iterator, void *context) {
       persist_write_int(KEY_SHOW_DATE, new_val);
       break;
     case KEY_DATE_FORMAT:
+      memcpy(date_format, t->value->cstring, t->length);
+      int curr_pos = 0;
+      for(uint i = 0; i < strlen(date_format); i++){
+        if(!date_format[i]) {
+          break;
+        }
+        switch(date_format[i]) {
+          case 'd':
+            new_date_format[curr_pos] = '%';
+            new_date_format[curr_pos+1] = 'a';
+            curr_pos += 2;
+            break;
+          case 'D':
+            new_date_format[curr_pos] = '%';
+            new_date_format[curr_pos+1] = 'e';
+            curr_pos += 2;
+            break;
+          case 'm':
+            new_date_format[curr_pos] = '%';
+            new_date_format[curr_pos+1] = 'b';
+            curr_pos += 2;
+            break;
+          case 'M':
+            new_date_format[curr_pos] = '%';
+            new_date_format[curr_pos+1] = 'm';
+            curr_pos += 2;
+            break;
+          case 'W':
+            new_date_format[curr_pos] = '%';
+            new_date_format[curr_pos+1] = 'W';
+            curr_pos += 2;
+            break;
+          case 'Y':
+            new_date_format[curr_pos] = '%';
+            new_date_format[curr_pos+1] = 'Y';
+            curr_pos += 2;
+            break;
+          case 'y':
+            new_date_format[curr_pos] = '%';
+            new_date_format[curr_pos+1] = 'y';
+            curr_pos += 2;
+            break;
+          default:
+            new_date_format[curr_pos] = date_format[i];
+            curr_pos++;
+        }
+      }
+      new_date_format[curr_pos] = '\0';
       if (persist_exists(KEY_DATE_FORMAT)) {
-        memcpy(new_date_format, t->value->cstring, t->length);
-        if (strcmp(date_format, new_date_format) != 0) {
+        if (strcmp(strftime_formated_date, new_date_format) != 0) {
           persist_write_string(KEY_DATE_FORMAT, new_date_format);
-          memcpy(date_format, new_date_format, strlen(new_date_format));
+          memcpy(strftime_formated_date, new_date_format, strlen(new_date_format));
         }
       } else {
-        memcpy(date_format, t->value->cstring, t->length);
-        persist_write_string(KEY_DATE_FORMAT, date_format);
+        persist_write_string(KEY_DATE_FORMAT, new_date_format);
+        memcpy(strftime_formated_date, new_date_format, strlen(new_date_format));
       }
       break;
     case KEY_BT_VIBRATE:
@@ -895,18 +958,21 @@ static void in_recv_handler(DictionaryIterator *iterator, void *context) {
 
 static void window_load(Window *window) {
   LOG("Window loading");
-  show_on_tap = false;
   //Restore local data saved
   int date_pos = persist_read_int_safe(KEY_DATE_POS, 1); //0=top / 1=bottom
   int saved_show_date = persist_read_int_safe(KEY_SHOW_DATE, 0);
   if(1 == saved_show_date) show_date = true;
   else show_date = false;
-  memcpy(date_format, "d, D.m (W), Y"+'\0', 14);
-	persist_read_string(KEY_DATE_FORMAT, date_format, DATE_FORMAT_MAX_LENGTH);
+  memcpy(strftime_formated_date, "%a, %e.%b (%W), %Y"+'\0', 19);
+  if (persist_exists(KEY_DATE_FORMAT))
+	  persist_read_string(KEY_DATE_FORMAT, strftime_formated_date, DATE_FORMAT_MAX_LENGTH);
   
-  int saved_show_min_marks = persist_read_int_safe(KEY_SHOW_MINUTE_MARKS, 0);
-  if(1 == saved_show_min_marks) show_minute_marks = true;
-  else show_minute_marks = false;
+  show_minute_marks = persist_read_int_safe(KEY_SHOW_MINUTE_MARKS, 0);
+  show_seconds = persist_read_int_safe(KEY_SHOW_SECONDS, 0);
+  
+  int tap_affect_int = persist_read_int_safe(KEY_TAP_AFFECTS, 23);
+  tap_affects_read(tap_affect_int);
+  tap_timer_length = persist_read_int_safe(KEY_TAP_DURATION ,TAP_TIMER_LENGTH_DEF);
   
   bluetooth_vibrate = persist_read_int_safe(KEY_BT_VIBRATE, BT_VIBRATE_ON_DISC);
   
@@ -1098,6 +1164,9 @@ void handle_init(void) {
   
   // Register with TickTimerService
   tick_timer_service_subscribe(MINUTE_UNIT, time_passes_tick_handler);
+  if(show_seconds) {
+    tick_timer_service_subscribe(SECOND_UNIT, time_passes_tick_handler);
+  }
 }
 
 void handle_deinit(void) {

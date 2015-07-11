@@ -12,6 +12,9 @@
         "KEY_MIN_COLOR_APLITE": 1,
         "KEY_SHOW_DATE": 9,
         "KEY_SHOW_MINUTE_MARKS": 10,
+        "KEY_SHOW_SECONDS": 15,
+        "KEY_TAP_AFFECTS": 14,
+        "KEY_TAP_DURATION": 13,
         "KEY_THEME_APLITE": 0
     },
     "capabilities": [

@@ -15,12 +15,22 @@
 #define KEY_SHOW_MINUTE_MARKS 10
 #define KEY_DATE_FORMAT 11
 #define KEY_DATE_POS 12
+#define KEY_TAP_DURATION 13
+#define KEY_TAP_AFFECTS 14
+#define KEY_SHOW_SECONDS 15
 
 // Default duration of tap_timer
 #define TAP_TIMER_LENGTH_DEF 5000
   
+// Positions for the bits that define what the tap affects to
+#define TAP_AFFECTS_SEC 1
+#define TAP_AFFECTS_MIN 2
+#define TAP_AFFECTS_DATE 4
+#define TAP_AFFECTS_BT 8
+#define TAP_AFFECTS_BATT 16
+  
 // Max. length of the date format string
-#define DATE_FORMAT_MAX_LENGTH 16
+#define DATE_FORMAT_MAX_LENGTH 40
   
 // Each color has a length of 6 plus the ending char
 #define EDITABLE_COLORS_LENGTH 55

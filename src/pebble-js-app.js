@@ -12,6 +12,10 @@ var battery_below_level = 40;
 var battery_color_scheme = 3;
 
 var show_minute_marks = 0;
+var show_seconds = 0;
+
+var tap_affects = 23;
+var tap_length = 5;
 
 var show_date = 0;
 var date_pos = 1;
@@ -27,8 +31,15 @@ function setItem(reference, item) {
 }
 
 function loadLocalVariables() {
+  show_seconds = parseInt(getItem("show_seconds"));
+  show_seconds = !show_seconds ? 0 : show_seconds;
   show_minute_marks = parseInt(getItem("show_minute_marks"));
   show_minute_marks = !show_minute_marks ? 0 : show_minute_marks;
+  
+  tap_length = parseInt(getItem("tap_length"));
+  tap_length = !tap_length ? 5 : tap_length;
+  tap_affects = parseInt(getItem("tap_affects"));
+  tap_affects = !tap_affects ? 23 : tap_affects;
   
   show_date = parseInt(getItem("show_date"));
   show_date = !show_date ? 0 : show_date;
@@ -85,7 +96,8 @@ Pebble.addEventListener("showConfiguration",
     var url = 'https://dl.dropboxusercontent.com/u/3223915/Pebble_config_pages/hourwindow_config_1.4.html' +
         '?watch_version=' + getWatchVersion() + '&btSignal=' + bt_signal + '&btVibrate=' + bt_vibrate +
         '&bat_mode=' + battery_mode + '&bat_below_level=' + battery_below_level +
-        '&show_min_marks=' + show_minute_marks + '&show_date=' + show_date +
+        '&show_min_marks=' + show_minute_marks + '&show_sec=' + show_seconds + '&show_date=' + show_date +
+        '&tap_length=' + tap_length + '&tap_affects=' + tap_affects +
         '&date_pos=' + date_pos + '&date_format=' + date_format;
     if (getWatchVersion() < 3) {
       url = url + '&theme_aplite=' + aplite_theme +
@@ -106,6 +118,21 @@ Pebble.addEventListener("webviewclosed",
     var configuration = JSON.parse(decodeURIComponent(e.response));
     console.log("Configuration window returned: " + JSON.stringify(configuration));
     
+    if(!isNaN(configuration.KEY_TAP_DURATION) && configuration.KEY_TAP_DURATION != tap_length) {
+      tap_length = configuration.KEY_TAP_DURATION;
+      setItem("tap_length", tap_length);
+    }
+    
+    if(!isNaN(configuration.KEY_TAP_AFFECTS) && configuration.KEY_TAP_AFFECTS != tap_affects) {
+      tap_affects = configuration.KEY_TAP_AFFECTS;
+      setItem("tap_affects", tap_affects);
+    }
+    
+    if(!isNaN(configuration.KEY_SHOW_SECONDS) && configuration.KEY_SHOW_SECONDS != show_seconds) {
+      show_seconds = configuration.KEY_SHOW_SECONDS;
+      setItem("show_seconds", show_seconds);
+    }
+    
     if(!isNaN(configuration.KEY_SHOW_MINUTE_MARKS) && configuration.KEY_SHOW_MINUTE_MARKS != show_minute_marks) {
       show_minute_marks = configuration.KEY_SHOW_MINUTE_MARKS;
       setItem("show_minute_marks", show_minute_marks);
@@ -121,7 +148,7 @@ Pebble.addEventListener("webviewclosed",
       setItem("date_pos", date_pos);
     }
     
-    if(!isNaN(configuration.KEY_DATE_FORMAT) && configuration.KEY_DATE_FORMAT != date_format) {
+    if(configuration.KEY_DATE_FORMAT != date_format) {
       date_format = configuration.KEY_DATE_FORMAT;
       setItem("date_format", date_format);
     }
