@@ -1,0 +1,7 @@
+### ignore all files in build, versionHistory and screenshots folders
+
+build/
+versionHistory/
+screenshots/
+.directory
+/.lock-waf_linux2_build
